@@ -45,7 +45,7 @@ export default function PublicNav() {
             <img
               src="/logo_cobrafantasmas_web.png"
               alt="Cobrafantasmas"
-              style={{ height: "48px", width: "auto", objectFit: "contain" }}
+              style={{ height: "64px", width: "auto", objectFit: "contain" }}
             />
           </Link>
 
