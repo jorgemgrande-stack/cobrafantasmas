@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import PublicLayout from "@/components/PublicLayout";
@@ -33,6 +33,9 @@ import {
   MapPin,
   Clock,
   Check,
+  Paperclip,
+  Loader2 as Loader2Icon,
+  X as XIcon,
 } from "lucide-react";
 
 // ─── Slides del hero ──────────────────────────────────────────────────────────
@@ -70,6 +73,14 @@ const SLIDES = [
     label: "[RASTREO ACTIVO]",
   },
 ];
+
+// ─── Documentos adjuntos ──────────────────────────────────────────────────────
+interface DocItem {
+  id: string;
+  title: string;
+  url: string;
+  filename: string;
+}
 
 // ─── Formulario Hero ──────────────────────────────────────────────────────────
 interface LeadForm {
@@ -173,6 +184,15 @@ export default function Home() {
   const [form, setForm] = useState<LeadForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
 
+  // Documentos adjuntos
+  const [docs, setDocs] = useState<DocItem[]>([{ id: "doc-0", title: "", url: "", filename: "" }]);
+  const [doc0Uploading, setDoc0Uploading] = useState(false);
+  const doc0FileRef = useRef<HTMLInputElement>(null);
+  const [showDocsModal, setShowDocsModal] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalUploading, setModalUploading] = useState(false);
+  const modalFileRef = useRef<HTMLInputElement>(null);
+
   // FAQ acordeón
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -208,6 +228,7 @@ export default function Home() {
     onSuccess: () => {
       toast.success("Caso recibido. Te contactamos pronto.");
       setForm(EMPTY_FORM);
+      setDocs([{ id: "doc-0", title: "", url: "", filename: "" }]);
       setSubmitting(false);
     },
     onError: () => {
@@ -258,6 +279,48 @@ export default function Home() {
     changeSlide((prev) => (prev + 1) % slides.length);
   };
 
+  // Upload doc inline (primer documento)
+  const handleDoc0Upload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setDoc0Uploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload/lead-doc", { method: "POST", body: fd });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Error al subir");
+      const { url } = await res.json();
+      setDocs(prev => prev.map((d, i) => i === 0 ? { ...d, url, filename: file.name } : d));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al subir el archivo");
+    } finally {
+      setDoc0Uploading(false);
+      if (doc0FileRef.current) doc0FileRef.current.value = "";
+    }
+  }, []);
+
+  // Upload doc desde modal
+  const handleModalDocUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setModalUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload/lead-doc", { method: "POST", body: fd });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Error al subir");
+      const { url } = await res.json();
+      setDocs(prev => [...prev, { id: `doc-${Date.now()}`, title: modalTitle.trim(), url, filename: file.name }]);
+      setModalTitle("");
+      toast.success("Documento adjuntado");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al subir el archivo");
+    } finally {
+      setModalUploading(false);
+      if (modalFileRef.current) modalFileRef.current.value = "";
+    }
+  }, [modalTitle]);
+
   // Submit formulario
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -270,13 +333,17 @@ export default function Home() {
       return;
     }
     setSubmitting(true);
+    const uploadedDocs = docs.filter(d => d.url);
+    const docsText = uploadedDocs.length > 0
+      ? "\n\n---\nDocumentación adjunta:\n" + uploadedDocs.map(d => `- ${d.title || "Sin título"}: ${d.url}`).join("\n")
+      : "";
     submitLeadMutation.mutate({
       name: form.nombre,
       email: form.email,
       phone: form.telefono || undefined,
       budget: form.importe || undefined,
       selectedCategory: form.tipo_deuda || undefined,
-      message: form.descripcion || undefined,
+      message: (form.descripcion + docsText) || undefined,
       source: "web_home",
     });
   };
@@ -566,6 +633,56 @@ export default function Home() {
                       placeholder="Describe brevemente el caso"
                       className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-neon focus-visible:ring-0 resize-none"
                     />
+                  </div>
+
+                  {/* Documentación adjunta */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-white/70 text-xs">Documentación adjunta</Label>
+                      <button
+                        type="button"
+                        onClick={() => setShowDocsModal(true)}
+                        className="flex items-center gap-1 text-[10px] text-[#7ED957] hover:underline"
+                      >
+                        <Paperclip className="w-3 h-3" /> Añadir más
+                      </button>
+                    </div>
+                    {/* Primer documento — inline */}
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text"
+                        value={docs[0].title}
+                        onChange={(e) => setDocs(prev => prev.map((d, i) => i === 0 ? { ...d, title: e.target.value } : d))}
+                        placeholder="Título del documento"
+                        className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-md px-2.5 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-[#7ED957]/40"
+                      />
+                      <input ref={doc0FileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleDoc0Upload} />
+                      {docs[0].url ? (
+                        <div className="shrink-0 flex items-center gap-1 bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white/70 max-w-[130px]">
+                          <Check className="w-3 h-3 text-[#7ED957] shrink-0" />
+                          <span className="truncate text-[10px]">{docs[0].filename}</span>
+                          <button type="button" onClick={() => setDocs(prev => prev.map((d, i) => i === 0 ? { ...d, url: "", filename: "" } : d))} className="ml-0.5 text-white/30 hover:text-red-400">
+                            <XIcon className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={doc0Uploading}
+                          onClick={() => doc0FileRef.current?.click()}
+                          className="shrink-0 flex items-center gap-1 bg-white/5 border border-white/10 hover:border-[#7ED957]/40 rounded-md px-2.5 py-1.5 text-xs text-white/50 hover:text-white/70 transition-colors disabled:opacity-50 whitespace-nowrap"
+                        >
+                          {doc0Uploading ? <Loader2Icon className="w-3 h-3 animate-spin" /> : <Paperclip className="w-3 h-3" />}
+                          {doc0Uploading ? "Subiendo…" : "Adjuntar"}
+                        </button>
+                      )}
+                    </div>
+                    {/* Otros docs añadidos */}
+                    {docs.filter((d, i) => i > 0 && d.url).length > 0 && (
+                      <p className="text-[10px] text-white/40">
+                        +{docs.filter((d, i) => i > 0 && d.url).length} documento(s) más adjunto(s)
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-start gap-3">
@@ -1129,6 +1246,99 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          MODAL — Documentación adjunta
+      ══════════════════════════════════════════════════════════════════════════ */}
+      {showDocsModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.75)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowDocsModal(false); }}
+        >
+          <div
+            className="w-full max-w-md rounded-xl p-6"
+            style={{ background: "#141414", border: "1px solid rgba(126,217,87,0.25)" }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-base text-white">Documentos adjuntos</h3>
+              <button onClick={() => setShowDocsModal(false)} className="text-white/40 hover:text-white transition-colors">
+                <XIcon className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Lista de documentos ya cargados */}
+            {docs.some(d => d.url) && (
+              <div className="mb-4 flex flex-col gap-2">
+                {docs.filter(d => d.url).map((doc) => (
+                  <div key={doc.id} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white/5 border border-white/8">
+                    <Check className="w-3.5 h-3.5 text-[#7ED957] shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-white truncate">{doc.title || "Sin título"}</p>
+                      <p className="text-[10px] text-white/40 truncate">{doc.filename}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDocs(prev => {
+                        const idx = prev.findIndex(d => d.id === doc.id);
+                        if (idx === 0) return prev.map((d, i) => i === 0 ? { ...d, url: "", filename: "" } : d);
+                        return prev.filter(d => d.id !== doc.id);
+                      })}
+                      className="shrink-0 text-white/30 hover:text-red-400 transition-colors"
+                    >
+                      <XIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Añadir nuevo documento */}
+            <div className="border-t border-white/10 pt-4">
+              <p className="text-xs text-white/50 mb-3">Añadir documento</p>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="text"
+                  value={modalTitle}
+                  onChange={(e) => setModalTitle(e.target.value)}
+                  placeholder="Título del documento (ej: Contrato, Factura…)"
+                  className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-[#7ED957]/50"
+                />
+                <input
+                  ref={modalFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  className="hidden"
+                  onChange={handleModalDocUpload}
+                />
+                <button
+                  type="button"
+                  disabled={modalUploading}
+                  onClick={() => modalFileRef.current?.click()}
+                  className="flex items-center justify-center gap-2 border-2 border-dashed border-white/10 hover:border-[#7ED957]/40 rounded-md py-3 text-xs text-white/50 hover:text-white/70 transition-colors disabled:opacity-50"
+                >
+                  {modalUploading ? (
+                    <><Loader2Icon className="w-4 h-4 animate-spin" /> Subiendo…</>
+                  ) : (
+                    <><Paperclip className="w-4 h-4" /> Seleccionar archivo (JPG, PNG, PDF — máx. 10 MB)</>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-5">
+              <button
+                type="button"
+                onClick={() => setShowDocsModal(false)}
+                className="px-5 py-2 text-xs font-bold text-black bg-[#7ED957] hover:bg-[#6bc948] rounded-md transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PublicLayout>
   );
 }

@@ -176,6 +176,46 @@ router.post("/api/upload-coupon", (req: Request, res: Response) => {
   });
 });
 
+// POST /api/upload/lead-doc — sube documento adjunto a un caso (público, sin auth)
+const leadDocUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      "image/jpeg", "image/jpg", "image/png", "image/webp",
+      "application/pdf",
+    ];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error(`Tipo no permitido. Solo JPG, PNG, WEBP o PDF.`));
+  },
+});
+
+router.post("/api/upload/lead-doc", (req: Request, res: Response) => {
+  leadDocUpload.single("file")(req, res, async (err) => {
+    if (err) {
+      const message = err instanceof Error ? err.message : "Error al procesar el archivo";
+      res.status(400).json({ error: message });
+      return;
+    }
+    try {
+      if (!req.file) {
+        res.status(400).json({ error: "No se recibió ningún archivo." });
+        return;
+      }
+      const { buffer, mimetype, originalname } = req.file;
+      const ext = originalname.split(".").pop() || "bin";
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2, 10);
+      const key = `cobrafantasmas/leads/${timestamp}-${random}.${ext}`;
+      const { url } = await storagePut(key, buffer, mimetype);
+      res.json({ url, key, filename: originalname });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error al subir el archivo";
+      res.status(500).json({ error: message });
+    }
+  });
+});
+
 // POST /api/upload/monitor-photo — sube foto de perfil de monitor a S3 (admin)
 const monitorPhotoUpload = multer({
   storage: multer.memoryStorage(),
