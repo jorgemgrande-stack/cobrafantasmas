@@ -1445,6 +1445,34 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return setHomeModuleItems(input.moduleKey, input.experienceIds);
       }),
+    getBlockImages: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return {} as Record<string, string>;
+      const rows = await db
+        .select({ key: systemSettings.key, value: systemSettings.value })
+        .from(systemSettings)
+        .where(sqlDrizzle`${systemSettings.key} LIKE 'home_block__%'`);
+      return Object.fromEntries(rows.map(r => [r.key, r.value ?? ""])) as Record<string, string>;
+    }),
+    setBlockImage: adminProcedure
+      .input(z.object({
+        blockKey: z.string().regex(/^[a-z0-9_-]+$/),
+        imageUrl: z.string(),
+        opacity: z.number().min(0).max(1),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB no disponible" });
+        const imgKey = `home_block__${input.blockKey}__image`;
+        const opKey  = `home_block__${input.blockKey}__opacity`;
+        await db.insert(systemSettings)
+          .values({ key: imgKey, value: input.imageUrl, category: "home_blocks", label: `BG imagen: ${input.blockKey}`, isPublic: true, isSensitive: false })
+          .onDuplicateKeyUpdate({ set: { value: input.imageUrl } });
+        await db.insert(systemSettings)
+          .values({ key: opKey, value: String(input.opacity), category: "home_blocks", label: `BG opacidad: ${input.blockKey}`, isPublic: true, isSensitive: false })
+          .onDuplicateKeyUpdate({ set: { value: String(input.opacity) } });
+        return { ok: true };
+      }),
   }),
 
   // ─── RESERVATIONS (Redsys) ─────────────────────────────────────────────────────

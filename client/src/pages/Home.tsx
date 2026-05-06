@@ -148,6 +148,20 @@ const FAQS = [
   },
 ];
 
+// ─── Fondo de sección desde CMS ──────────────────────────────────────────────
+function SectionBg({ image, opacity }: { image: string; opacity: number }) {
+  if (!image || opacity === 0) return null;
+  return (
+    <img
+      src={image}
+      alt=""
+      aria-hidden="true"
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ objectFit: "cover", objectPosition: "center", opacity, zIndex: 0 }}
+    />
+  );
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function Home() {
   // Hero slideshow
@@ -165,6 +179,16 @@ export default function Home() {
   // CMS slideshow
   const { data: cmsSlides } = trpc.public.getSlideshowItems.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
+  });
+
+  // Fondos de secciones (CMS)
+  const { data: blockImages } = trpc.homeModules.getBlockImages.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const blockBg = (key: string) => ({
+    image: blockImages?.[`home_block__${key}__image`] ?? "",
+    opacity: parseFloat(blockImages?.[`home_block__${key}__opacity`] ?? "0"),
   });
 
   const slides = (cmsSlides && cmsSlides.length > 0)
@@ -595,9 +619,10 @@ export default function Home() {
           MÓDULO 2 — Identificación del problema
       ══════════════════════════════════════════════════════════════════════════ */}
       <section
-        className="py-20 md:py-28"
+        className="py-20 md:py-28 relative overflow-hidden"
         style={{ backgroundColor: "#050505" }}
       >
+        <SectionBg {...blockBg("problemas")} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2
             className="font-display text-4xl md:text-5xl text-white mb-12 text-center leading-tight"
@@ -652,9 +677,10 @@ export default function Home() {
           MÓDULO 3 — Qué es Cobrafantasmas
       ══════════════════════════════════════════════════════════════════════════ */}
       <section
-        className="py-20 md:py-28"
+        className="py-20 md:py-28 relative overflow-hidden"
         style={{ backgroundColor: "#0A0A0A" }}
       >
+        <SectionBg {...blockBg("que-es")} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2
             className="font-display text-4xl md:text-5xl text-white mb-16 text-center leading-tight"
@@ -725,9 +751,10 @@ export default function Home() {
           MÓDULO 4 — Cómo funciona (timeline 4 pasos)
       ══════════════════════════════════════════════════════════════════════════ */}
       <section
-        className="py-20 md:py-28"
+        className="py-20 md:py-28 relative overflow-hidden"
         style={{ backgroundColor: "#111111" }}
       >
+        <SectionBg {...blockBg("como-funciona")} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-display text-4xl md:text-5xl text-white mb-4 text-center">
             4 pasos. Sin complicaciones.
@@ -803,9 +830,10 @@ export default function Home() {
           MÓDULO 5 — Protocolos
       ══════════════════════════════════════════════════════════════════════════ */}
       <section
-        className="py-20 md:py-28"
+        className="py-20 md:py-28 relative overflow-hidden"
         style={{ backgroundColor: "#050505" }}
       >
+        <SectionBg {...blockBg("protocolos")} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2
             className="font-display text-4xl md:text-5xl text-white mb-12 text-center leading-tight"
@@ -877,9 +905,10 @@ export default function Home() {
           MÓDULO 6 — IA constante
       ══════════════════════════════════════════════════════════════════════════ */}
       <section
-        className="py-20 md:py-28"
+        className="py-20 md:py-28 relative overflow-hidden"
         style={{ backgroundColor: "#0A0A0A" }}
       >
+        <SectionBg {...blockBg("ia")} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2
             className="font-display text-4xl md:text-5xl text-white mb-4 text-center leading-tight"
@@ -929,9 +958,10 @@ export default function Home() {
           MÓDULO 7 — Modelo de cobro
       ══════════════════════════════════════════════════════════════════════════ */}
       <section
-        className="py-20 md:py-28"
+        className="py-20 md:py-28 relative overflow-hidden"
         style={{ backgroundColor: "#111111" }}
       >
+        <SectionBg {...blockBg("precios")} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-display text-4xl md:text-5xl text-white mb-12 text-center">
             Recuperas o no pagas comisión.
@@ -999,9 +1029,10 @@ export default function Home() {
           MÓDULO 8 — FAQ
       ══════════════════════════════════════════════════════════════════════════ */}
       <section
-        className="py-20 md:py-28"
+        className="py-20 md:py-28 relative overflow-hidden"
         style={{ backgroundColor: "#050505" }}
       >
+        <SectionBg {...blockBg("faq")} />
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-display text-4xl md:text-5xl text-white mb-12 text-center">
             Preguntas frecuentes
@@ -1063,6 +1094,7 @@ export default function Home() {
         className="py-24 md:py-36 relative overflow-hidden"
         style={{ backgroundColor: "#0A0A0A" }}
       >
+        <SectionBg {...blockBg("cta-final")} />
         {/* Gradiente verde sutil */}
         <div
           className="absolute inset-0 pointer-events-none"

@@ -1,189 +1,140 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
-import { LayoutGrid, CheckCircle, Loader2, ArrowUp, ArrowDown, X, Plus } from "lucide-react";
+import { LayoutGrid, CheckCircle, Loader2, ImageIcon } from "lucide-react";
+import { toast } from "sonner";
 
-// ─── Constantes de módulos disponibles ───────────────────────────────────────
-const HOME_MODULES = [
-  {
-    key: "experiences_featured",
-    label: "Nuestras Experiencias",
-    description: "Productos que aparecen en la sección principal de experiencias de la home",
-    icon: "🏄",
-  },
-  {
-    key: "packs_day",
-    label: "Packs de Día Completo",
-    description: "Productos que aparecen en la sección de packs de la home",
-    icon: "📦",
-  },
+// ─── Secciones de la home de Cobrafantasmas ──────────────────────────────────
+const HOME_BLOCKS = [
+  { key: "problemas",     label: "El problema",         description: "Sección '¿Cuál es tu problema?'" },
+  { key: "que-es",        label: "Qué es Cobrafantasmas", description: "Sección de presentación de la empresa" },
+  { key: "como-funciona", label: "Cómo funciona",        description: "Timeline de 4 pasos del proceso" },
+  { key: "protocolos",    label: "Protocolos",           description: "Tarjetas de protocolos disponibles" },
+  { key: "ia",            label: "IA y tecnología",      description: "Sección de capacidades de IA" },
+  { key: "precios",       label: "Modelo de precios",    description: "Sección de tarifas y comisiones" },
+  { key: "faq",           label: "FAQ",                  description: "Preguntas frecuentes" },
+  { key: "cta-final",     label: "CTA final",            description: "Bloque de cierre con botón de acción" },
 ];
 
-// ─── Componente de selección para un módulo ───────────────────────────────────
-function ModuleEditor({ moduleKey, label, description, icon }: { moduleKey: string; label: string; description: string; icon: string }) {
+// ─── Editor de imagen de fondo para un bloque ────────────────────────────────
+function BlockEditor({
+  blockKey,
+  label,
+  description,
+  currentImage,
+  currentOpacity,
+  onSaved,
+}: {
+  blockKey: string;
+  label: string;
+  description: string;
+  currentImage: string;
+  currentOpacity: number;
+  onSaved: () => void;
+}) {
+  const [imageUrl, setImageUrl] = useState(currentImage);
+  const [opacity, setOpacity] = useState(currentOpacity);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const { data: allExperiences } = trpc.products.getAll.useQuery();
-  const { data: moduleItems, refetch } = trpc.homeModules.getModule.useQuery({ moduleKey });
-
-  const setModule = trpc.homeModules.setModule.useMutation({
+  const setBlockImage = trpc.homeModules.setBlockImage.useMutation({
     onSuccess: () => {
-      refetch();
       setSaving(false);
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      setTimeout(() => setSaved(false), 2500);
+      onSaved();
     },
-    onError: () => setSaving(false),
+    onError: (e) => {
+      setSaving(false);
+      toast.error("Error al guardar: " + e.message);
+    },
   });
 
-  const selectedIds: number[] = moduleItems?.map((i) => i.experienceId) ?? [];
-
-  const toggleExperience = (id: number) => {
-    const newIds = selectedIds.includes(id)
-      ? selectedIds.filter((x) => x !== id)
-      : [...selectedIds, id];
+  const handleSave = () => {
     setSaving(true);
     setSaved(false);
-    setModule.mutate({ moduleKey, experienceIds: newIds });
+    setBlockImage.mutate({ blockKey, imageUrl, opacity });
   };
 
-  const moveUp = (id: number) => {
-    const idx = selectedIds.indexOf(id);
-    if (idx <= 0) return;
-    const newIds = [...selectedIds];
-    [newIds[idx - 1], newIds[idx]] = [newIds[idx], newIds[idx - 1]];
-    setSaving(true);
-    setModule.mutate({ moduleKey, experienceIds: newIds });
-  };
-
-  const moveDown = (id: number) => {
-    const idx = selectedIds.indexOf(id);
-    if (idx < 0 || idx >= selectedIds.length - 1) return;
-    const newIds = [...selectedIds];
-    [newIds[idx], newIds[idx + 1]] = [newIds[idx + 1], newIds[idx]];
-    setSaving(true);
-    setModule.mutate({ moduleKey, experienceIds: newIds });
-  };
-
-  type Exp = NonNullable<typeof allExperiences>[number];
-  const selectedExperiences = selectedIds
-    .map((id) => allExperiences?.find((e: Exp) => e.id === id))
-    .filter(Boolean) as Exp[];
-
-  const availableExperiences = allExperiences?.filter((e: Exp) => !selectedIds.includes(e.id) && e.isActive) ?? [];
+  const opacityPct = Math.round(opacity * 100);
 
   return (
-    <div className="bg-muted/30 border border-border/50 rounded-xl p-5 mb-5">
-      {/* Header del módulo */}
-      <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border/50">
-        <span className="text-2xl">{icon}</span>
+    <div className="bg-muted/20 border border-border/50 rounded-xl p-5 mb-4">
+      <div className="flex items-start gap-4">
+        {/* Preview */}
+        <div
+          className="w-24 h-16 rounded-lg border border-border shrink-0 overflow-hidden bg-[#0A0A0A] flex items-center justify-center"
+          style={{ position: "relative" }}
+        >
+          {imageUrl ? (
+            <>
+              <img
+                src={imageUrl}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ opacity }}
+              />
+              <div className="absolute inset-0" style={{ background: "rgba(10,10,10,0.4)" }} />
+            </>
+          ) : (
+            <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+          )}
+        </div>
+
+        {/* Controles */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-foreground m-0">{label}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-        </div>
-        {saving && (
-          <span className="flex items-center gap-1.5 text-xs text-amber-400 font-medium">
-            <Loader2 className="w-3 h-3 animate-spin" /> Guardando...
-          </span>
-        )}
-        {saved && (
-          <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-            <CheckCircle className="w-3 h-3" /> Guardado
-          </span>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-5">
-        {/* Columna izquierda: seleccionados */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="bg-orange-500 text-white text-[10px] font-bold rounded-full px-2 py-0.5">
-              {selectedIds.length}
-            </span>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Productos seleccionados
-            </span>
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">{label}</h3>
+              <p className="text-[11px] text-muted-foreground">{description}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {saving && (
+                <span className="flex items-center gap-1 text-xs text-amber-400">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Guardando…
+                </span>
+              )}
+              {saved && (
+                <span className="flex items-center gap-1 text-xs text-emerald-400">
+                  <CheckCircle className="w-3 h-3" /> Guardado
+                </span>
+              )}
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-[#7ED957] hover:bg-[#6bc948] disabled:opacity-50 text-black text-xs font-bold px-4 py-1.5 rounded-md transition-colors"
+              >
+                Guardar
+              </button>
+            </div>
           </div>
-          {selectedExperiences.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground text-xs border-2 border-dashed border-border rounded-lg">
-              Sin productos seleccionados.<br />Añade desde la lista de la derecha.
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {selectedExperiences.map((exp, idx) => (
-                <div key={exp.id} className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-lg p-2">
-                  {exp.image1 ? (
-                    <img src={exp.image1} alt={exp.title} className="w-10 h-10 object-cover rounded-md shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 bg-muted rounded-md shrink-0 flex items-center justify-center text-base">🖼️</div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-foreground truncate">{exp.title}</div>
-                    <div className="text-[10px] text-muted-foreground">{exp.basePrice}€</div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <button
-                      onClick={() => moveUp(exp.id)}
-                      disabled={idx === 0}
-                      className="w-6 h-6 rounded border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ArrowUp className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => moveDown(exp.id)}
-                      disabled={idx === selectedExperiences.length - 1}
-                      className="w-6 h-6 rounded border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ArrowDown className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => toggleExperience(exp.id)}
-                    className="w-7 h-7 bg-red-500/20 border border-red-500/30 rounded-md flex items-center justify-center text-red-400 hover:bg-red-500/30 transition-colors shrink-0"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Columna derecha: disponibles */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Productos disponibles
-            </span>
+          {/* URL de imagen */}
+          <div className="mt-2 mb-3">
+            <label className="block text-[11px] text-muted-foreground mb-1">URL de imagen de fondo</label>
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://... o /local-storage/..."
+              className="w-full bg-background border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-[#7ED957]/50"
+            />
           </div>
-          {availableExperiences.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground text-xs">
-              Todos los productos están seleccionados
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2 max-h-96 overflow-y-auto pr-1">
-              {availableExperiences.map((exp) => (
-                <div key={exp.id} className="flex items-center gap-2 bg-muted/30 border border-border/50 rounded-lg p-2 hover:bg-muted/50 transition-colors">
-                  {exp.image1 ? (
-                    <img src={exp.image1} alt={exp.title} className="w-10 h-10 object-cover rounded-md shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 bg-muted rounded-md shrink-0 flex items-center justify-center text-base">🖼️</div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-foreground truncate">{exp.title}</div>
-                    <div className="text-[10px] text-muted-foreground">{exp.basePrice}€</div>
-                  </div>
-                  <button
-                    onClick={() => toggleExperience(exp.id)}
-                    className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-semibold rounded-md px-2.5 py-1.5 transition-colors shrink-0"
-                  >
-                    <Plus className="w-3 h-3" /> Añadir
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+
+          {/* Slider de opacidad */}
+          <div className="flex items-center gap-3">
+            <label className="text-[11px] text-muted-foreground whitespace-nowrap">
+              Opacidad: <span className="font-semibold text-foreground">{opacityPct}%</span>
+            </label>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={opacityPct}
+              onChange={(e) => setOpacity(Number(e.target.value) / 100)}
+              className="flex-1 h-1.5 accent-[#7ED957]"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -192,30 +143,39 @@ function ModuleEditor({ moduleKey, label, description, icon }: { moduleKey: stri
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function HomeModulesManager() {
+  const { data: blockImages, refetch } = trpc.homeModules.getBlockImages.useQuery(undefined, {
+    staleTime: 0,
+  });
+
+  const getVal = (blockKey: string, field: "image" | "opacity") => {
+    const key = `home_block__${blockKey}__${field}`;
+    return blockImages?.[key] ?? "";
+  };
+
   return (
-    <AdminLayout title="Módulos de la Home">
+    <AdminLayout title="Fondos de secciones">
       <div className="px-6 py-6">
-        {/* Page header */}
         <div className="flex items-center gap-3 mb-6 pb-5 border-b border-border/50">
-          <div className="p-2.5 rounded-xl bg-orange-500/15 border border-orange-500/25">
-            <LayoutGrid className="w-5 h-5 text-orange-400" />
+          <div className="p-2.5 rounded-xl bg-[#7ED957]/15 border border-[#7ED957]/25">
+            <LayoutGrid className="w-5 h-5 text-[#7ED957]" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground leading-none">Módulos de la Home</h1>
+            <h1 className="text-xl font-bold text-foreground leading-none">Fondos de secciones</h1>
             <p className="text-xs text-muted-foreground mt-1">
-              Selecciona qué productos aparecen en cada sección de la página principal. El orden de la lista determina el orden en la web.
+              Configura la imagen de fondo y su transparencia para cada sección de la página principal.
             </p>
           </div>
         </div>
 
-        {/* Módulos */}
-        {HOME_MODULES.map((mod) => (
-          <ModuleEditor
-            key={mod.key}
-            moduleKey={mod.key}
-            label={mod.label}
-            description={mod.description}
-            icon={mod.icon}
+        {HOME_BLOCKS.map((block) => (
+          <BlockEditor
+            key={block.key}
+            blockKey={block.key}
+            label={block.label}
+            description={block.description}
+            currentImage={getVal(block.key, "image")}
+            currentOpacity={parseFloat(getVal(block.key, "opacity") || "0")}
+            onSaved={refetch}
           />
         ))}
       </div>
