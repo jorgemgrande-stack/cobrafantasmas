@@ -268,15 +268,18 @@ export default function Home() {
         className="relative min-h-screen flex items-center overflow-hidden"
         style={{ backgroundColor: "#0A0A0A" }}
       >
-        {/* Imagen de fondo del slide (CMS) */}
+        {/* Imagen/GIF de fondo del slide (CMS) — img tag para que los GIFs animen */}
         {slide?.imageUrl && (
           <>
-            <div
-              className="absolute inset-0 transition-opacity duration-500"
+            <img
+              key={slide.imageUrl}
+              src={slide.imageUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full transition-opacity duration-500 pointer-events-none"
               style={{
-                backgroundImage: `url(${slide.imageUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
+                objectFit: "cover",
+                objectPosition: "center",
                 opacity: slideVisible ? 0.45 : 0,
               }}
             />
