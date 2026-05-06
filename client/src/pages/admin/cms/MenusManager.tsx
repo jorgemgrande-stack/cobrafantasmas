@@ -9,7 +9,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Navigation, ExternalLink, Eye, Plus, Trash2, Edit2, Check, X,
   ChevronUp, ChevronDown, ChevronRight, GripVertical, Link2, Globe,
-  Loader2, RefreshCw, Download,
+  Loader2, RefreshCw,
 } from "lucide-react";
 
 type MenuItem = {
@@ -187,14 +187,6 @@ export default function MenusManager() {
     onSuccess: () => utils.cms.getMenuItems.invalidate(),
     onError: (e) => toast.error(e.message),
   });
-  const seedMenuMut = trpc.cms.seedDefaultMenu.useMutation({
-    onSuccess: (data) => {
-      if (data.skipped) toast.info("El menú ya tiene ítems, no se ha modificado");
-      else toast.success(`Menú importado (${data.count} ítems)`);
-      utils.cms.getMenuItems.invalidate();
-    },
-    onError: (e) => toast.error(e.message),
-  });
 
   // Build tree
   const roots = allItems.filter((i) => i.parentId === null).sort((a, b) => a.sortOrder - b.sortOrder);
@@ -265,18 +257,6 @@ export default function MenusManager() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => seedMenuMut.mutate({ zone })}
-            disabled={seedMenuMut.isPending}
-            title="Importa los ítems de navegación del sitio (solo si el menú está vacío)"
-          >
-            {seedMenuMut.isPending
-              ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-              : <Download className="w-3.5 h-3.5 mr-1.5" />}
-            Importar menú
-          </Button>
           <Button
             variant="outline"
             size="sm"
