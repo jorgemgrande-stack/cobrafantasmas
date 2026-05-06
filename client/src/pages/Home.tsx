@@ -280,7 +280,7 @@ export default function Home() {
               style={{
                 objectFit: "cover",
                 objectPosition: "center",
-                opacity: slideVisible ? 0.45 : 0,
+                opacity: slideVisible ? 0.75 : 0,
               }}
             />
             <div
