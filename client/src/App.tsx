@@ -27,12 +27,6 @@ import Locations from "./pages/Locations";
 import LegoPacksHome from "./pages/LegoPacksHome";
 import LegoPacksList from "./pages/LegoPacksList";
 import LegoPackDetail from "./pages/LegoPackDetail";
-import Hotel from "./pages/Hotel";
-import Spa from "./pages/Spa";
-import Restaurantes from "./pages/Restaurantes";
-import RestauranteDetail from "./pages/RestauranteDetail";
-import RestauranteReservaOk from "./pages/RestauranteReservaOk";
-import RestauranteReservaKo from "./pages/RestauranteReservaKo";
 import ReservaOk from "./pages/ReservaOk";
 import ReservaError from "./pages/ReservaError";
 import SetPassword from "./pages/SetPassword";
@@ -42,9 +36,6 @@ import ResetPassword from "./pages/ResetPassword";
 import DynamicPage from "./pages/DynamicPage";
 import QuoteAcceptance from "./pages/QuoteAcceptance";
 import ProposalView from "./pages/ProposalView";
-import HotelRoom from "./pages/HotelRoom";
-import SpaDetail from "./pages/SpaDetail";
-import RestaurantBooking from "./pages/RestaurantBooking";
 import Checkout from "./pages/Checkout";
 import PoliticaPrivacidad from "./pages/PoliticaPrivacidad";
 import TerminosCondiciones from "./pages/TerminosCondiciones";
@@ -92,14 +83,7 @@ const CardTerminalOperationsManager = lazy(() => import("./pages/admin/accountin
 const CardTerminalBatchesManager = lazy(() => import("./pages/admin/accounting/CardTerminalBatchesManager"));
 const CardTerminalConciliationDashboard = lazy(() => import("./pages/admin/accounting/CardTerminalConciliationDashboard"));
 
-// Hotel & SPA
-const HotelManager = lazy(() => import("./pages/admin/hotel/HotelManager"));
-const SpaManager = lazy(() => import("./pages/admin/spa/SpaManager"));
 const ReviewsManager = lazy(() => import("./pages/admin/ReviewsManager"));
-
-// Restaurants Admin
-const RestaurantsManager = lazy(() => import("./pages/admin/restaurants/RestaurantsManager"));
-const GlobalCalendar = lazy(() => import("./pages/admin/restaurants/GlobalCalendar"));
 
 // Users & Settings
 const UsersManager = lazy(() => import("./pages/admin/users/UsersManager"));
@@ -119,9 +103,6 @@ const VapiAgente = lazy(() => import("./pages/admin/commercial/VapiAgente"));
 const EmailInbox = lazy(() => import("./pages/admin/commercial/EmailInbox"));
 const EmailAccountsSettings = lazy(() => import("./pages/admin/settings/EmailAccountsSettings"));
 const SolicitarAnulacion = lazy(() => import("./pages/SolicitarAnulacion"));
-
-// Fiscal REAV
-const ReavManager = lazy(() => import("./pages/admin/fiscal/ReavManager"));
 
 // Suppliers & Settlements
 const SuppliersManager = lazy(() => import("./pages/admin/suppliers/SuppliersManager"));
@@ -178,15 +159,6 @@ function Router() {
       <Route path="/lego-packs" component={LegoPacksHome} />
       <Route path="/lego-packs/detalle/:slug" component={LegoPackDetail} />
       <Route path="/lego-packs/:category" component={LegoPacksList} />
-      <Route path="/hotel" component={Hotel} />
-      <Route path="/hotel/:slug" component={HotelRoom} />
-      <Route path="/spa" component={Spa} />
-      <Route path="/spa/:slug" component={SpaDetail} />
-      <Route path="/restaurantes" component={Restaurantes} />
-      <Route path="/restaurantes/reserva-ok" component={RestauranteReservaOk} />
-      <Route path="/restaurantes/reserva-ko" component={RestauranteReservaKo} />
-      <Route path="/restaurantes/:slug" component={RestauranteDetail} />
-      <Route path="/restaurantes/:slug/reservar" component={RestaurantBooking} />
       {/* ── CHECKOUT ROUTE ── */}
       <Route path="/checkout" component={Checkout} />
       {/* ── RESERVA ROUTES ── */}
@@ -263,10 +235,6 @@ function Router() {
       <Route path="/admin/contabilidad/remesas-tpv">{() => <Suspense fallback={<AdminLoadingFallback />}><CardTerminalBatchesManager /></Suspense>}</Route>
       <Route path="/admin/contabilidad/conciliacion-tpv">{() => <Suspense fallback={<AdminLoadingFallback />}><CardTerminalConciliationDashboard /></Suspense>}</Route>
 
-      {/* Fiscal REAV */}
-      <Route path="/admin/fiscal">{() => <Suspense fallback={<AdminLoadingFallback />}><ReavManager /></Suspense>}</Route>
-      <Route path="/admin/fiscal/reav">{() => <Suspense fallback={<AdminLoadingFallback />}><ReavManager /></Suspense>}</Route>
-
       {/* Marketing */}
       <Route path="/admin/marketing">{() => <Suspense fallback={<AdminLoadingFallback />}><CuponesManager /></Suspense>}</Route>
       <Route path="/admin/marketing/cupones">{() => <Suspense fallback={<AdminLoadingFallback />}><CuponesManager /></Suspense>}</Route>
@@ -283,18 +251,8 @@ function Router() {
       <Route path="/admin/tpv/cajas">{() => <Suspense fallback={<AdminLoadingFallback />}><TpvBackoffice /></Suspense>}</Route>
       <Route path="/admin/tpv/backoffice">{() => <Suspense fallback={<AdminLoadingFallback />}><TpvBackoffice /></Suspense>}</Route>
 
-      {/* Hotel & SPA */}
-      <Route path="/admin/hotel">{() => <Suspense fallback={<AdminLoadingFallback />}><HotelManager /></Suspense>}</Route>
-      <Route path="/admin/spa">{() => <Suspense fallback={<AdminLoadingFallback />}><SpaManager /></Suspense>}</Route>
-
       {/* Reviews */}
       <Route path="/admin/operaciones/resenas">{() => <Suspense fallback={<AdminLoadingFallback />}><ReviewsManager /></Suspense>}</Route>
-
-      {/* Restaurants Admin */}
-      <Route path="/admin/restaurantes">{() => <Suspense fallback={<AdminLoadingFallback />}><RestaurantsManager /></Suspense>}</Route>
-      <Route path="/admin/restaurantes/reservas">{() => <Suspense fallback={<AdminLoadingFallback />}><RestaurantsManager /></Suspense>}</Route>
-      <Route path="/admin/restaurantes/calendario">{() => <Suspense fallback={<AdminLoadingFallback />}><GlobalCalendar /></Suspense>}</Route>
-      <Route path="/admin/restaurantes/configuracion">{() => <Suspense fallback={<AdminLoadingFallback />}><RestaurantsManager /></Suspense>}</Route>
 
       {/* Atención Comercial */}
       <Route path="/admin/atencion-comercial/whatsapp">{() => <Suspense fallback={<AdminLoadingFallback />}><WhatsAppGHLInbox /></Suspense>}</Route>

@@ -3,8 +3,8 @@ import { Link, useLocation, useSearch } from "wouter";
 import {
   LayoutDashboard, Package, FileText, Calendar, BarChart3,
   Settings, Menu, X, LogOut, Users, Image, ChevronDown,
-  Bell, Search, User, BedDouble, Sparkles, UtensilsCrossed, AlertCircle,
-  UserPlus, FileCheck, ChevronRight, Receipt, Truck, Monitor, Tag, Ticket,
+  Bell, Search, User, AlertCircle,
+  UserPlus, FileCheck, ChevronRight, Truck, Monitor, Tag, Ticket,
   Sun, Moon, ExternalLink, Target, MessageCircle, Bot, Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -145,42 +145,6 @@ const navItems = [
     children: [
       { label: "Gestión de proveedores", href: "/admin/suppliers" },
       { label: "Liquidaciones", href: "/admin/settlements" },
-    ],
-  },
-  {
-    label: "Fiscal REAV",
-    href: "/admin/fiscal/reav",
-    icon: Receipt,
-    roles: ["admin"],
-    flagKey: "reav_module_enabled",
-    children: [
-      { label: "Expedientes", href: "/admin/fiscal/reav" },
-    ],
-  },
-  {
-    label: "Hotel",
-    href: "/admin/hotel",
-    icon: BedDouble,
-    roles: ["admin"],
-    flagKey: "hotel_module_enabled",
-  },
-  {
-    label: "SPA",
-    href: "/admin/spa",
-    icon: Sparkles,
-    roles: ["admin"],
-    flagKey: "spa_module_enabled",
-  },
-  {
-    label: "Restaurantes",
-    href: "/admin/restaurantes",
-    icon: UtensilsCrossed,
-    roles: ["admin", "adminrest"],
-    flagKey: "restaurants_module_enabled",
-    children: [
-      { label: "Reservas", href: "/admin/restaurantes/reservas" },
-      { label: "Calendario Global", href: "/admin/restaurantes/calendario" },
-      { label: "Configuración", href: "/admin/restaurantes/configuracion" },
     ],
   },
   {

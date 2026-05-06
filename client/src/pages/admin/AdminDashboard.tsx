@@ -6,7 +6,6 @@ import {
   ExternalLink, Bell, AlertTriangle, Activity, CheckCircle2, UserCheck,
   XCircle, Building2, Ticket, ShoppingCart, CreditCard, Package, Star,
   Tag, Gift, ChevronRight, RefreshCw, Loader2, CheckCircle,
-  BedDouble, Sparkles, UtensilsCrossed,
 } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
@@ -737,79 +736,10 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* ── HOY EN EL COMPLEJO ─────────────────────────────────────── */}
+          {/* ── LEADS SIN ATENDER ──────────────────────────────────────── */}
           <div>
-            <SectionLabel label="Hoy en el complejo" />
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-
-              {/* Hotel */}
-              <Link href="/admin/hotel">
-                <div className="group rounded-xl border border-sky-200 dark:border-sky-700/30 hover:border-sky-400 dark:hover:border-sky-500/50 bg-gradient-to-br from-sky-50 to-white dark:from-sky-950/60 dark:to-[#080e1c]/80 p-4 cursor-pointer transition-all hover:brightness-105">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-500/20">
-                      <BedDouble className="w-4 h-4 text-sky-500 dark:text-sky-400" />
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-foreground/20 group-hover:text-sky-500 transition-colors" />
-                  </div>
-                  <p className="text-xs font-semibold text-foreground/70 mb-2">Hotel hoy</p>
-                  {isLoading ? (
-                    <div className="h-7 bg-muted/50 rounded animate-pulse" />
-                  ) : (complex?.hotelReservations ?? 0) === 0 ? (
-                    <p className="text-sm text-muted-foreground/50">Sin reservas hoy</p>
-                  ) : (
-                    <>
-                      <p className="text-2xl font-black text-sky-600 dark:text-sky-300">{complex?.hotelReservations}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{complex?.hotelGuests} huéspedes · check-in</p>
-                    </>
-                  )}
-                </div>
-              </Link>
-
-              {/* SPA */}
-              <Link href="/admin/spa">
-                <div className="group rounded-xl border border-purple-200 dark:border-purple-700/30 hover:border-purple-400 dark:hover:border-purple-500/50 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/60 dark:to-[#080e1c]/80 p-4 cursor-pointer transition-all hover:brightness-105">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-purple-500/20">
-                      <Sparkles className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-foreground/20 group-hover:text-purple-500 transition-colors" />
-                  </div>
-                  <p className="text-xs font-semibold text-foreground/70 mb-2">SPA hoy</p>
-                  {isLoading ? (
-                    <div className="h-7 bg-muted/50 rounded animate-pulse" />
-                  ) : (complex?.spaBookedSlots ?? 0) === 0 ? (
-                    <p className="text-sm text-muted-foreground/50">Sin citas hoy</p>
-                  ) : (
-                    <>
-                      <p className="text-2xl font-black text-purple-600 dark:text-purple-300">{complex?.spaBookedSlots}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{complex?.spaPax} personas · slots activos</p>
-                    </>
-                  )}
-                </div>
-              </Link>
-
-              {/* Restaurantes */}
-              <Link href="/admin/restaurantes">
-                <div className="group rounded-xl border border-rose-200 dark:border-rose-700/30 hover:border-rose-400 dark:hover:border-rose-500/50 bg-gradient-to-br from-rose-50 to-white dark:from-rose-950/60 dark:to-[#080e1c]/80 p-4 cursor-pointer transition-all hover:brightness-105">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-500/20">
-                      <UtensilsCrossed className="w-4 h-4 text-rose-500 dark:text-rose-400" />
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-foreground/20 group-hover:text-rose-500 transition-colors" />
-                  </div>
-                  <p className="text-xs font-semibold text-foreground/70 mb-2">Restaurantes hoy</p>
-                  {isLoading ? (
-                    <div className="h-7 bg-muted/50 rounded animate-pulse" />
-                  ) : (complex?.restaurantReservations ?? 0) === 0 ? (
-                    <p className="text-sm text-muted-foreground/50">Sin reservas hoy</p>
-                  ) : (
-                    <>
-                      <p className="text-2xl font-black text-rose-600 dark:text-rose-300">{complex?.restaurantCovers}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{complex?.restaurantReservations} reservas · cubiertos</p>
-                    </>
-                  )}
-                </div>
-              </Link>
+            <SectionLabel label="Seguimiento de leads" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
               {/* Leads sin atender */}
               <Link href="/admin/crm?tab=leads">
