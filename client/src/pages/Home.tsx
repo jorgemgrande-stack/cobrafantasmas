@@ -270,15 +270,21 @@ export default function Home() {
       >
         {/* Imagen de fondo del slide (CMS) */}
         {slide?.imageUrl && (
-          <div
-            className="absolute inset-0 transition-opacity duration-500"
-            style={{
-              backgroundImage: `url(${slide.imageUrl})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              opacity: slideVisible ? 0.18 : 0,
-            }}
-          />
+          <>
+            <div
+              className="absolute inset-0 transition-opacity duration-500"
+              style={{
+                backgroundImage: `url(${slide.imageUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: slideVisible ? 0.45 : 0,
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{ background: "linear-gradient(to right, rgba(10,10,10,0.85) 55%, rgba(10,10,10,0.4) 100%)" }}
+            />
+          </>
         )}
         {/* Humo verde sutil en esquinas inferiores */}
         <div
