@@ -260,7 +260,7 @@ export default function Home() {
   const slide = slides[currentSlide] ?? slides[0];
 
   return (
-    <PublicLayout>
+    <PublicLayout fullWidthHero>
       {/* ═══════════════════════════════════════════════════════════════════════
           MÓDULO 1 — HERO
       ══════════════════════════════════════════════════════════════════════════ */}
