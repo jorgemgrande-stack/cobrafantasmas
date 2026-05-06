@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Plus, Save, Eye, ChevronUp, ChevronDown, Trash2,
   Type, Image, Layout, AlignLeft, Link2, Grid, ChevronRight,
-  EyeOff, GripVertical, FileText, Globe, Settings
+  EyeOff, GripVertical, FileText, Globe, Settings, Download, Loader2
 } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 
@@ -262,6 +262,11 @@ export default function PagesManager() {
     onError: (e: any) => toast.error("Error al guardar: " + e.message),
   });
 
+  const seedPagesMutation = trpc.cms.seedDefaultPages.useMutation({
+    onSuccess: (data) => { toast.success(`${data.count} páginas importadas correctamente`); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+
   const upsertPageMutation = trpc.cms.upsertPage.useMutation({
     onSuccess: () => { toast.success("Estado actualizado"); refetch(); },
   });
@@ -437,6 +442,18 @@ export default function PagesManager() {
             <h1 className="text-2xl font-bold">Páginas del Sitio</h1>
             <p className="text-sm text-muted-foreground mt-1">{pages?.length ?? 0} páginas en el sitio</p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => seedPagesMutation.mutate()}
+            disabled={seedPagesMutation.isPending}
+            title="Importa todas las páginas del proyecto al gestor (seguro: no sobreescribe las que ya existen)"
+          >
+            {seedPagesMutation.isPending
+              ? <Loader2 size={14} className="mr-1.5 animate-spin" />
+              : <Download size={14} className="mr-1.5" />}
+            Importar páginas del sitio
+          </Button>
         </div>
 
         {isLoading ? (

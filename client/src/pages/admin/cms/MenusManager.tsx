@@ -9,7 +9,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Navigation, ExternalLink, Eye, Plus, Trash2, Edit2, Check, X,
   ChevronUp, ChevronDown, ChevronRight, GripVertical, Link2, Globe,
-  Loader2, RefreshCw,
+  Loader2, RefreshCw, Download,
 } from "lucide-react";
 
 type MenuItem = {
@@ -166,7 +166,7 @@ function AddItemRow({
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function MenusManager() {
-  const [zone] = useState<"header" | "footer">("header");
+  const [zone, setZone] = useState<"header" | "footer">("header");
   const utils = trpc.useUtils();
 
   const { data: allItems = [], isLoading } = trpc.cms.getMenuItems.useQuery({ zone });
@@ -185,6 +185,14 @@ export default function MenusManager() {
   });
   const reorderMut = trpc.cms.reorderMenuItems.useMutation({
     onSuccess: () => utils.cms.getMenuItems.invalidate(),
+    onError: (e) => toast.error(e.message),
+  });
+  const seedMenuMut = trpc.cms.seedDefaultMenu.useMutation({
+    onSuccess: (data) => {
+      if (data.skipped) toast.info("El menú ya tiene ítems, no se ha modificado");
+      else toast.success(`Menú importado (${data.count} ítems)`);
+      utils.cms.getMenuItems.invalidate();
+    },
     onError: (e) => toast.error(e.message),
   });
 
@@ -244,7 +252,7 @@ export default function MenusManager() {
     <AdminLayout title="Gestión de Menús">
       <div className="px-6 py-6">
       {/* Page header */}
-      <div className="flex items-center justify-between mb-6 pb-5 border-b border-border/50">
+      <div className="flex items-center justify-between mb-4 pb-5 border-b border-border/50">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-orange-500/15 border border-orange-500/25">
             <Navigation className="w-5 h-5 text-orange-400" />
@@ -260,6 +268,18 @@ export default function MenusManager() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => seedMenuMut.mutate({ zone })}
+            disabled={seedMenuMut.isPending}
+            title="Importa los ítems de navegación del sitio (solo si el menú está vacío)"
+          >
+            {seedMenuMut.isPending
+              ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              : <Download className="w-3.5 h-3.5 mr-1.5" />}
+            Importar menú
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => utils.cms.getMenuItems.invalidate()}
             disabled={updateMut.isPending || reorderMut.isPending}
           >
@@ -271,6 +291,23 @@ export default function MenusManager() {
             </Button>
           </a>
         </div>
+      </div>
+
+      {/* Zone tabs */}
+      <div className="flex gap-1 mb-5 bg-muted/30 rounded-lg p-1 w-fit">
+        {(["header", "footer"] as const).map((z) => (
+          <button
+            key={z}
+            onClick={() => setZone(z)}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              zone === z
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {z === "header" ? "Menú principal (header)" : "Pie de página (footer)"}
+          </button>
+        ))}
       </div>
 
       {/* Legend */}

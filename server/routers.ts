@@ -547,6 +547,55 @@ export const appRouter = router({
         return upsertPage(input);
       }),
 
+    seedDefaultPages: adminProcedure.mutation(async () => {
+      const DEFAULT_PAGES = [
+        { slug: "home",                   title: "Inicio",                    isPublished: true, metaTitle: "Cobrafantasmas | Recobro de nueva generación" },
+        { slug: "como-funciona",          title: "Cómo funciona",             isPublished: true },
+        { slug: "protocolos",             title: "Protocolos de recobro",     isPublished: true },
+        { slug: "el-sistema",             title: "El sistema Cobrafantasmas", isPublished: true },
+        { slug: "casos",                  title: "Casos de éxito",            isPublished: true },
+        { slug: "preguntas-frecuentes",   title: "Preguntas frecuentes",      isPublished: true },
+        { slug: "activar-caso",           title: "Activar un caso",           isPublished: true },
+        { slug: "privacidad",             title: "Política de privacidad",    isPublished: true },
+        { slug: "terminos",               title: "Términos y condiciones",    isPublished: true },
+        { slug: "cookies",                title: "Política de cookies",       isPublished: true },
+        { slug: "condiciones-cancelacion",title: "Condiciones de cancelación",isPublished: true },
+      ];
+      for (const page of DEFAULT_PAGES) {
+        await upsertPage(page);
+      }
+      return { ok: true, count: DEFAULT_PAGES.length };
+    }),
+
+    seedDefaultMenu: adminProcedure
+      .input(z.object({ zone: z.enum(["header", "footer"]) }))
+      .mutation(async ({ input }) => {
+        const existing = await getAllMenuItems(input.zone);
+        if (existing.length > 0) return { ok: true, skipped: true };
+        const ITEMS: Record<"header" | "footer", Array<{ label: string; url: string; sortOrder: number }>> = {
+          header: [
+            { label: "Cómo funciona",          url: "/como-funciona",          sortOrder: 10 },
+            { label: "Protocolos",              url: "/protocolos",             sortOrder: 20 },
+            { label: "El sistema",              url: "/el-sistema",             sortOrder: 30 },
+            { label: "Casos",                   url: "/casos",                  sortOrder: 40 },
+            { label: "FAQ",                     url: "/preguntas-frecuentes",   sortOrder: 50 },
+            { label: "Contacto",                url: "/#contacto",              sortOrder: 60 },
+          ],
+          footer: [
+            { label: "Inicio",                  url: "/",                       sortOrder: 10 },
+            { label: "Cómo funciona",           url: "/como-funciona",          sortOrder: 20 },
+            { label: "Protocolos",              url: "/protocolos",             sortOrder: 30 },
+            { label: "Política de privacidad",  url: "/privacidad",             sortOrder: 40 },
+            { label: "Términos y condiciones",  url: "/terminos",               sortOrder: 50 },
+            { label: "Política de cookies",     url: "/cookies",                sortOrder: 60 },
+          ],
+        };
+        for (const item of ITEMS[input.zone]) {
+          await createMenuItem({ ...item, menuZone: input.zone, isActive: true });
+        }
+        return { ok: true, skipped: false, count: ITEMS[input.zone].length };
+      }),
+
     // ── Site Settings — lee y escribe en system_settings (fuente de verdad única) ──
     getSiteSettings: adminProcedure.query(async () => {
       const db = await getDb();
