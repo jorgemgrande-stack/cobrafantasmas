@@ -1,0 +1,566 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1773608935894,
+      "tag": "0000_daily_human_fly",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1773609142094,
+      "tag": "0001_steady_mojo",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1773792095250,
+      "tag": "0002_odd_vindicator",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1773832742673,
+      "tag": "0003_watery_sister_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1773869326046,
+      "tag": "0004_next_kingpin",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1773875755120,
+      "tag": "0005_adorable_leopardon",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1774053876203,
+      "tag": "0006_giant_emma_frost",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1774084167721,
+      "tag": "0007_glamorous_greymalkin",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1774086907901,
+      "tag": "0008_colorful_gorgon",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1774092622946,
+      "tag": "0009_gorgeous_franklin_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1774108363665,
+      "tag": "0010_open_nightmare",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1774128681177,
+      "tag": "0011_easy_sheva_callister",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1774132103117,
+      "tag": "0012_thin_blur",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1774139994336,
+      "tag": "0013_wealthy_tarantula",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1774217888905,
+      "tag": "0014_wild_talisman",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "5",
+      "when": 1774264094912,
+      "tag": "0015_quick_jasper_sitwell",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1774306401977,
+      "tag": "0016_hesitant_blue_blade",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1774309571682,
+      "tag": "0017_flowery_tusk",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1774309641039,
+      "tag": "0018_round_midnight",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1774353707196,
+      "tag": "0019_silky_dagger",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1774369017540,
+      "tag": "0020_mixed_molly_hayes",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1774423512366,
+      "tag": "0021_damp_mandroid",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1774483406292,
+      "tag": "0022_concerned_wilson_fisk",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1774544340104,
+      "tag": "0023_clammy_microbe",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1774636785518,
+      "tag": "0024_talented_joystick",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1774641597001,
+      "tag": "0025_windy_power_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1774643946403,
+      "tag": "0026_small_wiccan",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1774692076456,
+      "tag": "0027_jazzy_talisman",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1774781684543,
+      "tag": "0028_add_template_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1774861068817,
+      "tag": "0029_daffy_professor_monster",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1774881076178,
+      "tag": "0030_common_killer_shrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1774884675841,
+      "tag": "0031_familiar_dorian_gray",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1774910717084,
+      "tag": "0032_massive_boomer",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1774913951490,
+      "tag": "0033_loving_mesmero",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1775037757780,
+      "tag": "0034_typical_black_bird",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1775039097263,
+      "tag": "0035_tired_sinister_six",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1775074919868,
+      "tag": "0036_left_mongoose",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1775080684897,
+      "tag": "0037_eager_starhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1775082960729,
+      "tag": "0038_worthless_black_cat",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "5",
+      "when": 1775229364331,
+      "tag": "0041_steep_longshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1744300000000,
+      "tag": "0042_coupon_attachment_mediumtext",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1744300060000,
+      "tag": "0043_reservation_activities_op_json",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1744300120000,
+      "tag": "0044_drop_merchant_order_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1744900000000,
+      "tag": "0045_pricing_dual",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "5",
+      "when": 1744960000000,
+      "tag": "0046_pricing_columns_safe",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "5",
+      "when": 1745020000000,
+      "tag": "0047_leads_cart_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "5",
+      "when": 1745080000000,
+      "tag": "0048_cancellation_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1776977519377,
+      "tag": "0049_refund_proof_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "5",
+      "when": 1777063920000,
+      "tag": "0050_bank_movements",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "5",
+      "when": 1777150320000,
+      "tag": "0051_bank_movement_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1777236720000,
+      "tag": "0052_card_terminal_operations",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "5",
+      "when": 1777323120000,
+      "tag": "0053_email_ingestion_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "5",
+      "when": 1777409520000,
+      "tag": "0054_email_ingestion_logs_v2",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "5",
+      "when": 1777495920000,
+      "tag": "0055_card_terminal_batches",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "5",
+      "when": 1777582320000,
+      "tag": "0056_batch_matching",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "5",
+      "when": 1777668720000,
+      "tag": "0057_expense_bank_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "5",
+      "when": 1777755120000,
+      "tag": "0058_manual_conciliation",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "5",
+      "when": 1777841520000,
+      "tag": "0059_cash_register",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "5",
+      "when": 1777927920000,
+      "tag": "0060_cash_closure_alerts",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "5",
+      "when": 1778014320000,
+      "tag": "0061_cash_resolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "5",
+      "when": 1778100720000,
+      "tag": "0062_feature_flags_system_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "5",
+      "when": 1778187120000,
+      "tag": "0063_brand_extra_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "5",
+      "when": 1778273520000,
+      "tag": "0064_config_change_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "5",
+      "when": 1778359920000,
+      "tag": "0065_organizations",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "5",
+      "when": 1778446320000,
+      "tag": "0066_onboarding_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "5",
+      "when": 1778532720000,
+      "tag": "0067_nayade_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "5",
+      "when": 1778619120000,
+      "tag": "0068_additional_job_flags",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "5",
+      "when": 1745708400000,
+      "tag": "0069_rbac_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "5",
+      "when": 1745795400000,
+      "tag": "0070_rbac_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "5",
+      "when": 1745882400000,
+      "tag": "0071_rbac_user_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "5",
+      "when": 1777248000000,
+      "tag": "0072_generic_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "5",
+      "when": 1777507200000,
+      "tag": "0073_fix_card_terminal_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "5",
+      "when": 1777593600000,
+      "tag": "0074_seed_brand_phone",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "5",
+      "when": 1777680000000,
+      "tag": "0075_update_brand_phone",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "5",
+      "when": 1777766400000,
+      "tag": "0076_rbac_reseed_users",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "5",
+      "when": 1777852800000,
+      "tag": "0077_admin_jorge_grande",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "5",
+      "when": 1777413658937,
+      "tag": "0078_controler_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "5",
+      "when": 1777415011834,
+      "tag": "0079_tax_refactor",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "5",
+      "when": 1745913600000,
+      "tag": "0080_proposals",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "5",
+      "when": 1777731203027,
+      "tag": "0079_flowery_cerise",
+      "breakpoints": true
+    }
+  ]
+}

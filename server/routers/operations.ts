@@ -1,0 +1,678 @@
+﻿import { z } from "zod";
+import { router, protectedProcedure, adminProcedure, permissionProcedure } from "../_core/trpc";
+
+const operationsViewProc = permissionProcedure("operations.view", ["admin", "agente", "monitor"]);
+import mysql from "mysql2/promise";
+import { drizzle } from "drizzle-orm/mysql2";
+import { eq, and, desc, asc } from "drizzle-orm";
+import {
+  monitors,
+  monitorDocuments,
+  monitorPayroll,
+  reservationOperational,
+} from "../../drizzle/schema";
+
+const pool = mysql.createPool({ uri: process.env.DATABASE_URL!, connectionLimit: 3 });
+const db = drizzle(pool);
+
+// ─── MONITORS CRUD ────────────────────────────────────────────────────────────
+const monitorsRouter = router({
+  list: adminProcedure
+    .input(z.object({
+      search: z.string().optional(),
+      isActive: z.boolean().optional(),
+    }))
+    .query(async ({ input }) => {
+      const rows = await db.select().from(monitors).orderBy(asc(monitors.fullName));
+      let result = rows;
+      if (input.isActive !== undefined) {
+        result = result.filter(m => m.isActive === input.isActive);
+      }
+      if (input.search) {
+        const q = input.search.toLowerCase();
+        result = result.filter(m =>
+          m.fullName.toLowerCase().includes(q) ||
+          (m.email ?? "").toLowerCase().includes(q) ||
+          (m.phone ?? "").includes(q)
+        );
+      }
+      return result;
+    }),
+
+  get: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const [monitor] = await db.select().from(monitors).where(eq(monitors.id, input.id));
+      if (!monitor) throw new Error("Monitor no encontrado");
+      const docs = await db.select().from(monitorDocuments).where(eq(monitorDocuments.monitorId, input.id)).orderBy(desc(monitorDocuments.createdAt));
+      const payrolls = await db.select().from(monitorPayroll).where(eq(monitorPayroll.monitorId, input.id)).orderBy(desc(monitorPayroll.year), desc(monitorPayroll.month));
+      return { ...monitor, documents: docs, payrolls };
+    }),
+
+  create: adminProcedure
+    .input(z.object({
+      fullName: z.string().min(2),
+      dni: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().email().optional().or(z.literal("")),
+      address: z.string().optional(),
+      birthDate: z.string().optional(),
+      emergencyName: z.string().optional(),
+      emergencyRelation: z.string().optional(),
+      emergencyPhone: z.string().optional(),
+      iban: z.string().optional(),
+      ibanHolder: z.string().optional(),
+      contractType: z.enum(["indefinido","temporal","autonomo","practicas","otro"]).optional(),
+      contractStart: z.string().optional(),
+      contractEnd: z.string().optional(),
+      contractConditions: z.string().optional(),
+      notes: z.string().optional(),
+      isActive: z.boolean().default(true),
+      photoUrl: z.string().optional(),
+      photoKey: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const [result] = await db.insert(monitors).values({
+        fullName: input.fullName,
+        dni: input.dni,
+        phone: input.phone,
+        email: input.email || undefined,
+        address: input.address,
+        birthDate: input.birthDate ? new Date(input.birthDate) : undefined,
+        emergencyName: input.emergencyName,
+        emergencyRelation: input.emergencyRelation,
+        emergencyPhone: input.emergencyPhone,
+        iban: input.iban,
+        ibanHolder: input.ibanHolder,
+        contractType: input.contractType,
+        contractStart: input.contractStart ? new Date(input.contractStart) : undefined,
+        contractEnd: input.contractEnd ? new Date(input.contractEnd) : undefined,
+        contractConditions: input.contractConditions,
+        notes: input.notes,
+        isActive: input.isActive,
+        photoUrl: input.photoUrl,
+        photoKey: input.photoKey,
+      });
+      return { id: (result as any).insertId };
+    }),
+
+  update: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      fullName: z.string().min(2).optional(),
+      dni: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+      address: z.string().optional(),
+      birthDate: z.string().optional(),
+      emergencyName: z.string().optional(),
+      emergencyRelation: z.string().optional(),
+      emergencyPhone: z.string().optional(),
+      iban: z.string().optional(),
+      ibanHolder: z.string().optional(),
+      contractType: z.enum(["indefinido","temporal","autonomo","practicas","otro"]).optional(),
+      contractStart: z.string().optional(),
+      contractEnd: z.string().optional(),
+      contractConditions: z.string().optional(),
+      notes: z.string().optional(),
+      isActive: z.boolean().optional(),
+      photoUrl: z.string().optional(),
+      photoKey: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, birthDate, contractStart, contractEnd, ...rest } = input;
+      await db.update(monitors).set({
+        ...rest,
+        birthDate: birthDate ? new Date(birthDate) : undefined,
+        contractStart: contractStart ? new Date(contractStart) : undefined,
+        contractEnd: contractEnd ? new Date(contractEnd) : undefined,
+      }).where(eq(monitors.id, id));
+      return { ok: true };
+    }),
+
+  delete: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.delete(monitors).where(eq(monitors.id, input.id));
+      return { ok: true };
+    }),
+
+  // Documents
+  addDocument: adminProcedure
+    .input(z.object({
+      monitorId: z.number(),
+      type: z.enum(["dni","contrato","certificado","otro"]),
+      name: z.string(),
+      fileUrl: z.string(),
+      fileKey: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db.insert(monitorDocuments).values({
+        monitorId: input.monitorId,
+        type: input.type,
+        name: input.name,
+        fileUrl: input.fileUrl,
+        fileKey: input.fileKey,
+        uploadedBy: ctx.user.id,
+      });
+      return { ok: true };
+    }),
+
+  deleteDocument: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.delete(monitorDocuments).where(eq(monitorDocuments.id, input.id));
+      return { ok: true };
+    }),
+
+  // Payroll
+  addPayroll: adminProcedure
+    .input(z.object({
+      monitorId: z.number(),
+      year: z.number(),
+      month: z.number().min(1).max(12),
+      baseSalary: z.string(),
+      extras: z.array(z.object({ concept: z.string(), amount: z.number(), type: z.string() })).default([]),
+      totalAmount: z.string(),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db.insert(monitorPayroll).values({
+        monitorId: input.monitorId,
+        year: input.year,
+        month: input.month,
+        baseSalary: input.baseSalary,
+        extras: input.extras,
+        totalAmount: input.totalAmount,
+        notes: input.notes,
+        createdBy: ctx.user.id,
+      });
+      return { ok: true };
+    }),
+
+  updatePayroll: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      baseSalary: z.string().optional(),
+      extras: z.array(z.object({ concept: z.string(), amount: z.number(), type: z.string() })).optional(),
+      totalAmount: z.string().optional(),
+      status: z.enum(["pendiente","pagado"]).optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, ...rest } = input;
+      await db.update(monitorPayroll).set({
+        ...rest,
+        paidAt: rest.status === "pagado" ? new Date() : undefined,
+      }).where(eq(monitorPayroll.id, id));
+      return { ok: true };
+    }),
+
+  deletePayroll: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.delete(monitorPayroll).where(eq(monitorPayroll.id, input.id));
+      return { ok: true };
+    }),
+});
+
+// ─── CALENDAR (Unified) ───────────────────────────────────────────────────────
+const calendarRouter = router({
+  getEvents: operationsViewProc
+    .input(z.object({
+      from: z.string(), // ISO date string YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS
+      to: z.string(),   // ISO date string YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS
+    }))
+    .query(async ({ input }) => {
+      // Always extract only the date portion (YYYY-MM-DD) to avoid mismatch with time-suffixed strings.
+      // CRITICAL: Use DATE_FORMAT(booking_date, '%Y-%m-%d') in SELECT to return dates as plain strings.
+      // Without DATE_FORMAT, MySQL DATE columns are returned as JS Date objects with UTC midnight
+      // (e.g. "2026-03-31T04:00:00.000Z"), which can shift by 1 day when parsed in the browser's
+      // local timezone. DATE_FORMAT forces a string like "2026-03-31" that is timezone-safe.
+      const fromDate = input.from.slice(0, 10);
+      const toDate = input.to.slice(0, 10);
+
+      // Query reservations (activities/packs) from the main reservations table
+      // CRITICAL: booking_date is stored as UTC timestamp (e.g. 2026-03-31T04:00:00Z for Spain UTC+2).
+      // Using <= toDate compares against 2026-03-31T00:00:00Z which EXCLUDES the last day.
+      // Fix: use < DATE_ADD(toDate, INTERVAL 1 DAY) to include the full last day.
+      const [activityRows] = await pool.execute<any[]>(`
+        SELECT
+          r.id,
+          r.customer_name AS clientName,
+          r.customer_email AS clientEmail,
+          r.customer_phone AS clientPhone,
+          r.reservation_number AS reservationNumber,
+          r.status_reservation AS statusReservation,
+          r.extras_json AS extrasJson,
+          DATE_FORMAT(r.booking_date, '%Y-%m-%d') AS scheduledDate,
+          r.people AS numberOfPersons,
+          r.status,
+          r.channel,
+          COALESCE(e.title, r.product_name) AS activityTitle,
+          e.slug AS activitySlug,
+          'activity' AS eventType,
+          ro.client_confirmed AS clientConfirmed,
+          ro.arrival_time AS arrivalTime,
+          ro.op_notes AS opNotes,
+          ro.monitor_id AS monitorId,
+          ro.op_status AS opStatus,
+          ro.activities_op_json AS activitiesOpJson,
+          m.full_name AS monitorName
+        FROM reservations r
+        LEFT JOIN experiences e ON r.product_id = e.id
+        LEFT JOIN reservation_operational ro ON ro.reservation_id = r.id AND ro.reservation_type = 'activity'
+        LEFT JOIN monitors m ON m.id = ro.monitor_id
+        WHERE r.booking_date >= ? AND r.booking_date < DATE_ADD(?, INTERVAL 1 DAY)
+          AND r.status = 'paid'
+          AND r.status_reservation NOT IN ('ANULADA')
+        ORDER BY r.booking_date ASC
+      `, [fromDate, toDate]);
+
+      // Query restaurant bookings
+      // restaurant_bookings uses: date (varchar), time (varchar), guests (int), guestName, guestLastName
+      const [restaurantRows] = await pool.execute<any[]>(`
+        SELECT
+          rb.id,
+          CONCAT(rb.guestName, ' ', rb.guestLastName) AS clientName,
+          rb.guestEmail AS clientEmail,
+          rb.guestPhone AS clientPhone,
+          rb.date AS scheduledDate,
+          rb.guests AS numberOfPersons,
+          rb.status,
+          rb.channel,
+          CONCAT(rest.name, ' - ', rb.time) AS activityTitle,
+          rb.time AS bookingTime,
+          'restaurant' AS eventType,
+          ro.client_confirmed AS clientConfirmed,
+          ro.arrival_time AS arrivalTime,
+          ro.op_notes AS opNotes,
+          NULL AS monitorId,
+          ro.op_status AS opStatus,
+          NULL AS monitorName
+        FROM restaurant_bookings rb
+        LEFT JOIN restaurants rest ON rest.id = rb.restaurantId
+        LEFT JOIN reservation_operational ro ON ro.reservation_id = rb.id AND ro.reservation_type = 'restaurant'
+        WHERE rb.date >= ? AND rb.date < DATE_ADD(?, INTERVAL 1 DAY)
+          AND rb.status IN ('confirmed','completed')
+        ORDER BY rb.date ASC, rb.time ASC
+      `, [fromDate, toDate]);
+
+      return {
+        activities: activityRows || [],
+        restaurants: restaurantRows || [],
+      };
+    }),
+});
+
+// ─── DAILY ORDERS ─────────────────────────────────────────────────────────────
+const dailyOrdersRouter = router({
+  getForDate: protectedProcedure
+    .input(z.object({ date: z.string() }))
+    .query(async ({ input }) => {
+      // booking_date is a DATE column — use input string directly (no Date conversion)
+      // NEVER use new Date().toISOString(): the server runs in UTC-4 which shifts dates
+      const dateStr = input.date.slice(0, 10);
+
+      const [activityRows] = await pool.execute<any[]>(`
+        SELECT
+          r.id,
+          r.customer_name AS clientName,
+          r.customer_email AS clientEmail,
+          r.customer_phone AS clientPhone,
+          r.reservation_number AS reservationNumber,
+          r.status_reservation AS statusReservation,
+          r.extras_json AS extrasJson,
+          r.channel,
+          r.created_at AS createdAt,
+          DATE_FORMAT(r.booking_date, '%Y-%m-%d') AS scheduledDate,
+          r.people AS numberOfPersons,
+          r.status,
+          COALESCE(e.title, r.product_name) AS activityTitle,
+          'activity' AS eventType,
+          ro.client_confirmed AS clientConfirmed,
+          ro.client_confirmed_at AS clientConfirmedAt,
+          ro.arrival_time AS arrivalTime,
+          ro.op_notes AS opNotes,
+          ro.monitor_id AS monitorId,
+          ro.op_status AS opStatus,
+          ro.activities_op_json AS activitiesOpJson,
+          m.full_name AS monitorName,
+          ro.id AS opId
+        FROM reservations r
+        LEFT JOIN experiences e ON r.product_id = e.id
+        LEFT JOIN reservation_operational ro ON ro.reservation_id = r.id AND ro.reservation_type = 'activity'
+        LEFT JOIN monitors m ON m.id = ro.monitor_id
+        WHERE r.booking_date = ?
+          AND r.status = 'paid'
+          AND r.status_reservation NOT IN ('ANULADA')
+        ORDER BY r.booking_date ASC
+      `, [dateStr]);
+
+      const [restaurantRows] = await pool.execute<any[]>(`
+        SELECT
+          rb.id,
+          CONCAT(rb.guestFirstName, ' ', COALESCE(rb.guestLastName, '')) AS clientName,
+          rb.guestEmail AS clientEmail,
+          rb.guestPhone AS clientPhone,
+          DATE_FORMAT(rb.bookingDate, '%Y-%m-%d') AS scheduledDate,
+          rb.numberOfGuests AS numberOfPersons,
+          rb.status,
+          CONCAT(rest.name, ' - ', rb.bookingTime) AS activityTitle,
+          rb.bookingTime AS bookingTime,
+          'restaurant' AS eventType,
+          ro.client_confirmed AS clientConfirmed,
+          ro.client_confirmed_at AS clientConfirmedAt,
+          ro.arrival_time AS arrivalTime,
+          ro.op_notes AS opNotes,
+          NULL AS monitorId,
+          ro.op_status AS opStatus,
+          NULL AS monitorName,
+          ro.id AS opId
+        FROM restaurant_bookings rb
+        LEFT JOIN restaurants rest ON rest.id = rb.restaurantId
+        LEFT JOIN reservation_operational ro ON ro.reservation_id = rb.id AND ro.reservation_type = 'restaurant'
+        WHERE rb.bookingDate = ?
+          AND rb.status IN ('confirmed','completed')
+        ORDER BY rb.bookingDate ASC, rb.bookingTime ASC
+      `, [dateStr]);
+
+      return {
+        activities: activityRows || [],
+        restaurants: restaurantRows || [],
+        date: input.date,
+      };
+    }),
+
+  updateOperational: operationsViewProc
+    .input(z.object({
+      reservationId: z.number(),
+      reservationType: z.enum(["activity","restaurant","hotel","spa","pack"]),
+      clientConfirmed: z.boolean().optional(),
+      arrivalTime: z.string().optional(),
+      opNotes: z.string().optional(),
+      monitorId: z.number().nullable().optional(),
+      opStatus: z.enum(["pendiente","confirmado","incidencia","completado"]).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const existing = await db.select().from(reservationOperational)
+        .where(and(
+          eq(reservationOperational.reservationId, input.reservationId),
+          eq(reservationOperational.reservationType, input.reservationType)
+        ));
+
+      const updateData: any = {
+        updatedBy: ctx.user.id,
+      };
+      if (input.clientConfirmed !== undefined) {
+        updateData.clientConfirmed = input.clientConfirmed;
+        if (input.clientConfirmed) {
+          updateData.clientConfirmedAt = new Date();
+          updateData.clientConfirmedBy = ctx.user.id;
+        }
+      }
+      if (input.arrivalTime !== undefined) updateData.arrivalTime = input.arrivalTime;
+      if (input.opNotes !== undefined) updateData.opNotes = input.opNotes;
+      if (input.monitorId !== undefined) updateData.monitorId = input.monitorId;
+      if (input.opStatus !== undefined) updateData.opStatus = input.opStatus;
+
+      if (existing.length > 0) {
+        await db.update(reservationOperational)
+          .set(updateData)
+          .where(eq(reservationOperational.id, existing[0].id));
+      } else {
+        // Auto-confirm if the reservation is paid
+        const [[resRow]] = await pool.execute<any[]>(
+          `SELECT status FROM reservations WHERE id = ? UNION SELECT status FROM restaurant_bookings WHERE id = ? LIMIT 1`,
+          [input.reservationId, input.reservationId]
+        );
+        const isPaid = resRow && ['paid','confirmed'].includes(resRow.status);
+        await db.insert(reservationOperational).values({
+          reservationId: input.reservationId,
+          reservationType: input.reservationType,
+          clientConfirmed: isPaid ? true : false,
+          clientConfirmedAt: isPaid ? new Date() : undefined,
+          // Paid reservations start as 'confirmado', not 'pendiente'
+          opStatus: isPaid ? 'confirmado' : 'pendiente',
+          ...updateData,
+        });
+      }
+      return { ok: true };
+    }),
+
+  getDashboardStats: operationsViewProc
+    .input(z.object({ date: z.string() }))
+    .query(async ({ input }) => {
+      // Use input string directly to avoid UTC offset issues
+      const dateStr2 = input.date.slice(0, 10);
+
+      const [[actStats]] = await pool.execute<any[]>(`
+        SELECT
+          COUNT(*) AS total,
+          SUM(CASE WHEN ro.client_confirmed = 1 THEN 1 ELSE 0 END) AS confirmed,
+          SUM(CASE WHEN (ro.client_confirmed IS NULL OR ro.client_confirmed = 0) THEN 1 ELSE 0 END) AS pending,
+          SUM(CASE WHEN ro.op_status = 'incidencia' THEN 1 ELSE 0 END) AS incidencias
+        FROM reservations r
+        LEFT JOIN reservation_operational ro ON ro.reservation_id = r.id AND ro.reservation_type = 'activity'
+        WHERE r.booking_date = ?
+          AND r.status = 'paid'
+          AND r.status_reservation NOT IN ('ANULADA')
+      `, [dateStr2]);
+
+      const [[restStats]] = await pool.execute<any[]>(`
+        SELECT COUNT(*) AS total
+        FROM restaurant_bookings rb
+        WHERE rb.bookingDate = ?
+          AND rb.status NOT IN ('cancelled','failed')
+      `, [dateStr2]);
+
+      return {
+        totalReservations: (actStats?.total || 0) + (restStats?.total || 0),
+        confirmedClients: actStats?.confirmed || 0,
+        pendingConfirmation: actStats?.pending || 0,
+        incidencias: actStats?.incidencias || 0,
+        restaurantBookings: restStats?.total || 0,
+      };
+    }),
+});
+
+// ─── ACTIVITIES (Actividades del día) ─────────────────────────────────────────
+const activitiesRouter = router({
+  getForDate: protectedProcedure
+    .input(z.object({ date: z.string() }))
+    .query(async ({ input }) => {
+      // booking_date is a DATE column — use input string directly (no Date conversion)
+      // Use DATE_FORMAT to return as plain string to avoid timezone offset issues
+      const actDateStr = input.date.slice(0, 10);
+
+      const [rows] = await pool.execute<any[]>(`
+        SELECT
+          r.id,
+          r.customer_name AS clientName,
+          r.customer_email AS clientEmail,
+          r.customer_phone AS clientPhone,
+          r.reservation_number AS reservationNumber,
+          r.status_reservation AS statusReservation,
+          r.extras_json AS extrasJson,
+          r.merchant_order AS merchantOrder,
+          r.channel,
+          r.created_at AS createdAt,
+          DATE_FORMAT(r.booking_date, '%Y-%m-%d') AS scheduledDate,
+          r.people AS numberOfPersons,
+          r.status,
+          COALESCE(e.title, r.product_name) AS activityTitle,
+          e.slug AS activitySlug,
+          e.duration AS duration,
+          ro.client_confirmed AS clientConfirmed,
+          ro.arrival_time AS arrivalTime,
+          ro.op_notes AS opNotes,
+          ro.monitor_id AS monitorId,
+          ro.op_status AS opStatus,
+          ro.activities_op_json AS activitiesOpJson,
+          m.full_name AS monitorName,
+          ro.id AS opId
+        FROM reservations r
+        LEFT JOIN experiences e ON r.product_id = e.id
+        LEFT JOIN reservation_operational ro ON ro.reservation_id = r.id AND ro.reservation_type = 'activity'
+        LEFT JOIN monitors m ON m.id = ro.monitor_id
+        WHERE r.booking_date = ?
+          AND r.status = 'paid'
+          AND r.status_reservation NOT IN ('ANULADA')
+        ORDER BY r.booking_date ASC
+      `, [actDateStr]);
+
+      return rows || [];
+    }),
+
+  assignMonitor: adminProcedure
+    .input(z.object({
+      reservationId: z.number(),
+      monitorId: z.number().nullable(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const existing = await db.select().from(reservationOperational)
+        .where(and(
+          eq(reservationOperational.reservationId, input.reservationId),
+          eq(reservationOperational.reservationType, "activity")
+        ));
+
+      if (existing.length > 0) {
+        await db.update(reservationOperational)
+          .set({ monitorId: input.monitorId, updatedBy: ctx.user.id })
+          .where(eq(reservationOperational.id, existing[0].id));
+      } else {
+        await db.insert(reservationOperational).values({
+          reservationId: input.reservationId,
+          reservationType: "activity",
+          monitorId: input.monitorId,
+          updatedBy: ctx.user.id,
+        });
+      }
+      return { ok: true };
+    }),
+
+  // Confirm client arrival directly from the card
+  confirmArrival: adminProcedure
+    .input(z.object({ reservationId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const existing = await db.select().from(reservationOperational)
+        .where(and(
+          eq(reservationOperational.reservationId, input.reservationId),
+          eq(reservationOperational.reservationType, "activity")
+        ));
+      if (existing.length > 0) {
+        await db.update(reservationOperational)
+          .set({ clientConfirmed: true, clientConfirmedAt: new Date(), clientConfirmedBy: ctx.user.id, updatedBy: ctx.user.id })
+          .where(eq(reservationOperational.id, existing[0].id));
+      } else {
+        await db.insert(reservationOperational).values({
+          reservationId: input.reservationId,
+          reservationType: "activity",
+          clientConfirmed: true,
+          clientConfirmedAt: new Date(),
+          clientConfirmedBy: ctx.user.id,
+          updatedBy: ctx.user.id,
+        });
+      }
+      return { ok: true };
+    }),
+
+  // Cancel an activity (sets reservation status = 'cancelled')
+  cancelActivity: adminProcedure
+    .input(z.object({ reservationId: z.number() }))
+    .mutation(async ({ input }) => {
+      await pool.execute(
+        `UPDATE reservations SET status = 'cancelled' WHERE id = ?`,
+        [input.reservationId]
+      );
+      return { ok: true };
+    }),
+
+  // Update arrival time and/or op notes for an activity
+  updateDetails: adminProcedure
+    .input(z.object({
+      reservationId: z.number(),
+      arrivalTime: z.string().optional(),
+      opNotes: z.string().optional(),
+      monitorId: z.number().nullable().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const existing = await db.select().from(reservationOperational)
+        .where(and(
+          eq(reservationOperational.reservationId, input.reservationId),
+          eq(reservationOperational.reservationType, "activity")
+        ));
+
+      const updateData: any = { updatedBy: ctx.user.id };
+      if (input.arrivalTime !== undefined) updateData.arrivalTime = input.arrivalTime;
+      if (input.opNotes !== undefined) updateData.opNotes = input.opNotes;
+      if (input.monitorId !== undefined) updateData.monitorId = input.monitorId;
+
+      if (existing.length > 0) {
+        await db.update(reservationOperational)
+          .set(updateData)
+          .where(eq(reservationOperational.id, existing[0].id));
+      } else {
+        await db.insert(reservationOperational).values({
+          reservationId: input.reservationId,
+          reservationType: "activity",
+          ...updateData,
+        });
+      }
+      return { ok: true };
+    }),
+
+  // Update operational data for a specific sub-activity (by index within extras_json)
+  updateActivityOp: adminProcedure
+    .input(z.object({
+      reservationId: z.number(),
+      activityIndex: z.number(),
+      monitorId: z.number().nullable().optional(),
+      arrivalTime: z.string().optional(),
+      opNotes: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const existing = await db.select().from(reservationOperational)
+        .where(and(
+          eq(reservationOperational.reservationId, input.reservationId),
+          eq(reservationOperational.reservationType, "activity")
+        ));
+
+      const row = existing[0];
+      const current: Array<{ index: number; monitorId?: number | null; arrivalTime?: string; opNotes?: string }> =
+        (row?.activitiesOpJson as any) || [];
+
+      const idx = current.findIndex(a => a.index === input.activityIndex);
+      const updated = { index: input.activityIndex, ...current[idx] };
+      if (input.monitorId !== undefined) updated.monitorId = input.monitorId;
+      if (input.arrivalTime !== undefined) updated.arrivalTime = input.arrivalTime;
+      if (input.opNotes !== undefined) updated.opNotes = input.opNotes;
+
+      const newJson = idx >= 0
+        ? current.map((a, i) => i === idx ? updated : a)
+        : [...current, updated];
+
+      if (row) {
+        await db.update(reservationOperational)
+          .set({ activitiesOpJson: newJson as any, updatedBy: ctx.user.id })
+          .where(eq(reservationOperational.id, row.id));
+      } else {
+        await db.insert(reservationOperational).values({
+          reservationId: input.reservationId,
+          reservationType: "activity",
+          activitiesOpJson: newJson as any,
+          updatedBy: ctx.user.id,
+        });
+      }
+      return { ok: true };
+    }),
+});
+
+// ─── MAIN OPERATIONS ROUTER ───────────────────────────────────────────────────
+export const operationsRouter = router({
+  monitors: monitorsRouter,
+  calendar: calendarRouter,
+  dailyOrders: dailyOrdersRouter,
+  activities: activitiesRouter,
+});
+
