@@ -162,6 +162,23 @@ export default function Home() {
   // FAQ acordeón
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  // CMS slideshow
+  const { data: cmsSlides } = trpc.public.getSlideshowItems.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const slides = (cmsSlides && cmsSlides.length > 0)
+    ? cmsSlides.map((s) => ({
+        label: s.badge || "[PROTOCOLO ACTIVO]",
+        claim: s.title || "",
+        claimHighlight: s.subtitle || "",
+        subclaim: s.description || "",
+        cta: s.ctaText || "Activar mi caso",
+        ctaHref: s.ctaUrl || "/activar-caso",
+        imageUrl: s.imageUrl,
+      }))
+    : SLIDES.map((s) => ({ ...s, imageUrl: undefined as string | undefined }));
+
   // tRPC mutation
   const submitLeadMutation = trpc.public.submitLead.useMutation({
     onSuccess: () => {
@@ -179,7 +196,7 @@ export default function Home() {
   const startTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      changeSlide((prev) => (prev + 1) % SLIDES.length);
+      changeSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
   };
 
@@ -196,7 +213,7 @@ export default function Home() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [slides.length]);
 
   const goToSlide = (idx: number) => {
     startTimer();
@@ -209,12 +226,12 @@ export default function Home() {
 
   const prevSlide = () => {
     startTimer();
-    changeSlide((prev) => (prev - 1 + SLIDES.length) % SLIDES.length);
+    changeSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
   const nextSlide = () => {
     startTimer();
-    changeSlide((prev) => (prev + 1) % SLIDES.length);
+    changeSlide((prev) => (prev + 1) % slides.length);
   };
 
   // Submit formulario
@@ -240,7 +257,7 @@ export default function Home() {
     });
   };
 
-  const slide = SLIDES[currentSlide];
+  const slide = slides[currentSlide] ?? slides[0];
 
   return (
     <PublicLayout>
@@ -251,6 +268,18 @@ export default function Home() {
         className="relative min-h-screen flex items-center overflow-hidden"
         style={{ backgroundColor: "#0A0A0A" }}
       >
+        {/* Imagen de fondo del slide (CMS) */}
+        {slide?.imageUrl && (
+          <div
+            className="absolute inset-0 transition-opacity duration-500"
+            style={{
+              backgroundImage: `url(${slide.imageUrl})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              opacity: slideVisible ? 0.18 : 0,
+            }}
+          />
+        )}
         {/* Humo verde sutil en esquinas inferiores */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -323,7 +352,7 @@ export default function Home() {
                 </button>
 
                 <div className="flex items-center gap-2">
-                  {SLIDES.map((_, idx) => (
+                  {slides.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => goToSlide(idx)}
