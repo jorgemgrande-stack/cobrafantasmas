@@ -201,7 +201,7 @@ function BlockEditor({
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function HomeModulesManager() {
-  const { data: blockImages, refetch } = trpc.homeModules.getBlockImages.useQuery(undefined, {
+  const { data: blockImages, refetch, isLoading } = trpc.homeModules.getBlockImages.useQuery(undefined, {
     staleTime: 0,
   });
 
@@ -225,17 +225,23 @@ export default function HomeModulesManager() {
           </div>
         </div>
 
-        {HOME_BLOCKS.map((block) => (
-          <BlockEditor
-            key={block.key}
-            blockKey={block.key}
-            label={block.label}
-            description={block.description}
-            currentImage={getVal(block.key, "image")}
-            currentOpacity={parseFloat(getVal(block.key, "opacity") || "0")}
-            onSaved={refetch}
-          />
-        ))}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          HOME_BLOCKS.map((block) => (
+            <BlockEditor
+              key={block.key}
+              blockKey={block.key}
+              label={block.label}
+              description={block.description}
+              currentImage={getVal(block.key, "image")}
+              currentOpacity={parseFloat(getVal(block.key, "opacity") || "0")}
+              onSaved={refetch}
+            />
+          ))
+        )}
       </div>
     </AdminLayout>
   );
