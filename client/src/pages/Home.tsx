@@ -323,7 +323,7 @@ export default function Home() {
         />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+          <div className="flex flex-col lg:flex-row items-start gap-12 lg:gap-16">
             {/* Columna izquierda — Texto y claims */}
             <div className="w-full lg:w-3/5 flex flex-col gap-8">
               {/* Slide content */}
@@ -428,7 +428,7 @@ export default function Home() {
             </div>
 
             {/* Columna derecha — Formulario */}
-            <div className="w-full lg:w-2/5">
+            <div className="w-full lg:w-2/5 lg:self-start lg:sticky lg:top-8">
               <div
                 className="p-6 md:p-8 rounded-xl"
                 style={{
