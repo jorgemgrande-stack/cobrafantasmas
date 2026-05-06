@@ -34,7 +34,7 @@ const features = [
 
 export default function ElSistema() {
   return (
-    <PublicLayout>
+    <PublicLayout fullWidthHero>
       {/* ── Hero interior ─────────────────────────────────────────────── */}
       <section
         style={{

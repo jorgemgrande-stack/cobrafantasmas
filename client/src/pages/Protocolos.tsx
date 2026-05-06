@@ -50,7 +50,7 @@ const protocols = [
 
 export default function Protocolos() {
   return (
-    <PublicLayout>
+    <PublicLayout fullWidthHero>
       {/* ── Hero interior ─────────────────────────────────────────────── */}
       <section
         style={{

@@ -129,7 +129,7 @@ export default function ActivarCaso() {
     ) : null;
 
   return (
-    <PublicLayout>
+    <PublicLayout fullWidthHero>
       {/* ── Hero interior ─────────────────────────────────────────────── */}
       <section
         style={{

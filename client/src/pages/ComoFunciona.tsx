@@ -78,7 +78,7 @@ export default function ComoFunciona() {
   ];
 
   return (
-    <PublicLayout>
+    <PublicLayout fullWidthHero>
       {/* ── Hero interior ─────────────────────────────────────────────── */}
       <section
         style={{

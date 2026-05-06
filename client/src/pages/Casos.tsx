@@ -58,7 +58,7 @@ const casos = [
 
 export default function Casos() {
   return (
-    <PublicLayout>
+    <PublicLayout fullWidthHero>
       {/* ── Hero interior ─────────────────────────────────────────────── */}
       <section
         style={{

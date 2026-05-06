@@ -93,7 +93,7 @@ export default function PreguntasFrecuentes() {
   const toggle = (key: string) => setOpenKey(openKey === key ? null : key);
 
   return (
-    <PublicLayout>
+    <PublicLayout fullWidthHero>
       {/* ── Hero interior ─────────────────────────────────────────────── */}
       <section
         style={{
