@@ -1,8 +1,7 @@
 [build]
-builder = "NIXPACKS"
-buildCommand = "npm run build"
+builder = "DOCKERFILE"
 
 [deploy]
-startCommand = "npm run start"
+startCommand = "node dist/index.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
