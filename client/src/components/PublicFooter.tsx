@@ -1,166 +1,305 @@
 import { Link } from "wouter";
-import { Anchor, Mail, Phone, MapPin, Instagram, Facebook, Youtube, Clock } from "lucide-react";
-import { usePublicPhone } from "@/hooks/usePublicPhone";
 
-const colExperiencias = [
-  { label: "Blob Jump", href: "/experiencias/blob-jump" },
-  { label: "Banana Ski & Donuts", href: "/experiencias/banana-ski-donuts" },
-  { label: "Cableski & Wakeboard", href: "/experiencias/cableski-wakeboard" },
-  { label: "Canoas & Kayaks", href: "/experiencias/canoas-kayaks" },
-  { label: "Paddle Surf", href: "/experiencias/paddle-surf" },
-  { label: "Aventura Hinchable", href: "/experiencias/aventura-hinchable" },
-];
-
-const colLegoPacks = [
-  { label: "Lego Packs de Día", href: "/lego-packs/dia" },
-  { label: "Lego Packs Escolares", href: "/lego-packs/escolar" },
-  { label: "Lego Packs Empresas", href: "/lego-packs/empresa" },
-  { label: "Hotel + Actividades", href: "/lego-packs/estancia" },
-  { label: "Solicitar Presupuesto", href: "/presupuesto" },
+const colNavegacion = [
+  { label: "Inicio", href: "/" },
+  { label: "Cómo funciona", href: "/como-funciona" },
+  { label: "Protocolos", href: "/protocolos" },
+  { label: "El sistema", href: "/el-sistema" },
+  { label: "Casos", href: "/casos" },
+  { label: "FAQ", href: "/preguntas-frecuentes" },
 ];
 
 const colServicios = [
-  { label: "Hotel Náyade ★★★", href: "/hotel" },
-  { label: "SPA & Wellness", href: "/spa" },
-  { label: "El Galeón", href: "/restaurantes/el-galeon" },
-  { label: "La Cabaña del Lago", href: "/restaurantes/la-cabana-del-lago" },
-  { label: "Nassau Bar & Music", href: "/restaurantes/nassau-bar" },
-  { label: "Arrocería La Cabaña", href: "/restaurantes/arroceria-la-cabana" },
-  { label: "Galería de Fotos", href: "/galeria" },
-  { label: "Ubicación", href: "/ubicacion" },
-  { label: "Solicitar Presupuesto", href: "/presupuesto" },
-  { label: "Solicitar Anulación", href: "/solicitar-anulacion" },
+  { label: "Activar un caso", href: "/activar-caso" },
+  { label: "Consulta inicial gratuita", href: "/contacto" },
+  { label: "Panel de acreedores", href: "/login" },
 ];
 
-export default function PublicFooter() {
-  const { phone, phoneTel } = usePublicPhone();
+const colLegal = [
+  { label: "Política de privacidad", href: "/politica-privacidad" },
+  { label: "Términos y condiciones", href: "/terminos-condiciones" },
+  { label: "Política de cookies", href: "/politica-cookies" },
+  { label: "Contacto", href: "/contacto" },
+];
 
+const linkStyle: React.CSSProperties = {
+  fontFamily: "'Inter', system-ui, sans-serif",
+  fontSize: "0.85rem",
+  color: "#888",
+  textDecoration: "none",
+  cursor: "pointer",
+  transition: "color 0.2s ease",
+  display: "inline-block",
+};
+
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <footer className="bg-lago-dark text-white">
-      {/* Main footer */}
-      <div className="container py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10">
-          {/* Brand column */}
-          <div className="lg:col-span-2">
-            <Link href="/" className="inline-block mb-5 cursor-pointer">
-              <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663410228097/AV298FS8t5SaTurBBRqhgQ/nayade_White_41263eee.png"
-                alt="Náyade Experiences"
-                className="h-20 w-auto object-contain"
-              />
-            </Link>
-            <p className="text-white/60 text-sm leading-relaxed mb-6 max-w-xs">
-              El destino de aventuras acuáticas y bienestar en el embalse de Los Ángeles de San Rafael, Segovia. A solo 45 minutos de Madrid.
-            </p>
+    <li>
+      <Link href={href}>
+        <span
+          style={linkStyle}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#7ED957"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#888"; }}
+        >
+          {children}
+        </span>
+      </Link>
+    </li>
+  );
+}
 
-            <div className="space-y-3 mb-6">
-              <div className="flex items-start gap-3 text-sm">
-                <MapPin className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                <span className="text-white/65">Complejo Los Ángeles de San Rafael<br />40420 Segovia, España</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <Phone className="w-4 h-4 text-accent flex-shrink-0" />
-                <a href={phoneTel} className="text-white/65 hover:text-accent transition-colors">{phone}</a>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <Mail className="w-4 h-4 text-accent flex-shrink-0" />
-                <a href="mailto:reservas@nayadeexperiences.es" className="text-white/65 hover:text-accent transition-colors">reservas@nayadeexperiences.es</a>
-              </div>
-              <div className="flex items-start gap-3 text-sm">
-                <Clock className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                <span className="text-white/65">Lun–Dom · 10:00 – 20:00<br />Temporada Abril — Octubre</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <a href="https://instagram.com/nayadeexperiences" target="_blank" rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg bg-white/10 hover:bg-accent flex items-center justify-center transition-colors">
-                <Instagram className="w-4 h-4 text-white" />
-              </a>
-              <a href="https://facebook.com/nayadeexperiences" target="_blank" rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg bg-white/10 hover:bg-accent flex items-center justify-center transition-colors">
-                <Facebook className="w-4 h-4 text-white" />
-              </a>
-              <a href="https://youtube.com/@nayadeexperiences" target="_blank" rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg bg-white/10 hover:bg-accent flex items-center justify-center transition-colors">
-                <Youtube className="w-4 h-4 text-white" />
-              </a>
-            </div>
-          </div>
-
-          {/* Experiencias */}
-          <div>
-            <h4 className="font-display font-bold text-white text-xs uppercase tracking-widest mb-4 text-accent">Experiencias</h4>
-            <ul className="space-y-2">
-              {colExperiencias.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href}>
-                    <span className="text-white/55 hover:text-accent text-sm font-display transition-colors cursor-pointer">{link.label}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Lego Packs */}
-          <div>
-            <h4 className="font-display font-bold text-white text-xs uppercase tracking-widest mb-4 text-accent">Lego Packs</h4>
-            <ul className="space-y-2">
-              {colLegoPacks.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href}>
-                    <span className="text-white/55 hover:text-accent text-sm font-display transition-colors cursor-pointer">{link.label}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Servicios */}
-          <div>
-            <h4 className="font-display font-bold text-white text-xs uppercase tracking-widest mb-4 text-accent">Servicios</h4>
-            <ul className="space-y-2">
-              {colServicios.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href}>
-                    <span className="text-white/55 hover:text-accent text-sm font-display transition-colors cursor-pointer">{link.label}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+export default function PublicFooter() {
+  return (
+    <footer
+      style={{
+        backgroundColor: "#0A0A0A",
+        borderTop: "1px solid rgba(126,217,87,0.2)",
+        color: "#FFFFFF",
+      }}
+    >
+      {/* ── CTA Banner ─────────────────────────────────────────────── */}
+      <div
+        style={{
+          backgroundColor: "#141414",
+          borderBottom: "1px solid rgba(126,217,87,0.1)",
+          padding: "48px 0",
+          textAlign: "center",
+        }}
+      >
+        <div className="container">
+          <p
+            style={{
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontSize: "clamp(1.4rem, 3vw, 2.2rem)",
+              letterSpacing: "0.03em",
+              color: "#FFFFFF",
+              marginBottom: "24px",
+              lineHeight: 1.25,
+            }}
+          >
+            Las deudas desaparecen cuando nadie insiste.{" "}
+            <span style={{ color: "#7ED957" }}>Nosotros sí insistimos.</span>
+          </p>
+          <Link href="/activar-caso">
+            <span
+              style={{
+                display: "inline-block",
+                padding: "13px 32px",
+                fontFamily: "'Inter', system-ui, sans-serif",
+                fontSize: "0.9rem",
+                fontWeight: 700,
+                color: "#FFFFFF",
+                backgroundColor: "#E41E26",
+                borderRadius: "6px",
+                cursor: "pointer",
+                textDecoration: "none",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                transition: "box-shadow 0.2s ease, background-color 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLSpanElement).style.boxShadow = "0 0 20px rgba(228,30,38,0.4), 0 0 40px rgba(228,30,38,0.15)";
+                (e.currentTarget as HTMLSpanElement).style.backgroundColor = "#ff2a33";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLSpanElement).style.boxShadow = "none";
+                (e.currentTarget as HTMLSpanElement).style.backgroundColor = "#E41E26";
+              }}
+            >
+              Activar mi caso
+            </span>
+          </Link>
         </div>
       </div>
 
-      {/* Bottom bar */}
-      <div className="border-t border-white/10">
-        <div className="container py-5 flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-white/40 text-xs font-display text-center md:text-left">
-            © {new Date().getFullYear()} Náyade Experiences · Todos los derechos reservados · Los Ángeles de San Rafael, Segovia
-          </p>
-          <div className="flex items-center gap-5">
-            <Link href="/privacidad">
-              <span className="text-white/40 hover:text-white/70 text-xs font-display transition-colors cursor-pointer">Privacidad</span>
-            </Link>
-            <Link href="/terminos">
-              <span className="text-white/40 hover:text-white/70 text-xs font-display transition-colors cursor-pointer">Términos</span>
-            </Link>
-            <Link href="/cookies">
-              <span className="text-white/40 hover:text-white/70 text-xs font-display transition-colors cursor-pointer">Cookies</span>
-            </Link>
-            <Link href="/condiciones-cancelacion">
-              <span className="text-white/40 hover:text-white/70 text-xs font-display transition-colors cursor-pointer">Cancelación</span>
-            </Link>
-            <span className="text-white/20">·</span>
-            <Link href="/admin">
-              <span className="text-white/25 hover:text-white/60 text-xs font-display transition-colors cursor-pointer flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Acceso Gestores
+      {/* ── Footer Grid ────────────────────────────────────────────── */}
+      <div className="container" style={{ padding: "56px 1rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(1, 1fr)",
+            gap: "40px",
+          }}
+          className="footer-grid"
+        >
+          {/* Col 1 — Marca */}
+          <div>
+            <Link href="/">
+              <span
+                style={{
+                  display: "inline-block",
+                  marginBottom: "16px",
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  lineHeight: 1,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "'Bebas Neue', Impact, sans-serif",
+                    fontSize: "1.6rem",
+                    letterSpacing: "0.04em",
+                    color: "#FFFFFF",
+                  }}
+                >
+                  COBRA
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'Bebas Neue', Impact, sans-serif",
+                    fontSize: "1.6rem",
+                    letterSpacing: "0.04em",
+                    color: "#7ED957",
+                  }}
+                >
+                  FANTASMAS
+                </span>
               </span>
             </Link>
+            <p
+              style={{
+                fontFamily: "'Inter', system-ui, sans-serif",
+                fontSize: "0.82rem",
+                color: "#7ED957",
+                fontWeight: 600,
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                marginBottom: "8px",
+              }}
+            >
+              Presencia operativa continua.
+            </p>
+            <p
+              style={{
+                fontFamily: "'Inter', system-ui, sans-serif",
+                fontSize: "0.82rem",
+                color: "#666",
+                lineHeight: 1.6,
+                maxWidth: "260px",
+              }}
+            >
+              Tecnología, persistencia y creatividad aplicada al cobro.
+            </p>
+          </div>
+
+          {/* Col 2 — Navegación */}
+          <div>
+            <h4
+              style={{
+                fontFamily: "'Bebas Neue', Impact, sans-serif",
+                fontSize: "0.9rem",
+                letterSpacing: "0.15em",
+                color: "#7ED957",
+                marginBottom: "16px",
+                textTransform: "uppercase",
+              }}
+            >
+              Navegación
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+              {colNavegacion.map((link) => (
+                <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
+              ))}
+            </ul>
+          </div>
+
+          {/* Col 3 — Servicios */}
+          <div>
+            <h4
+              style={{
+                fontFamily: "'Bebas Neue', Impact, sans-serif",
+                fontSize: "0.9rem",
+                letterSpacing: "0.15em",
+                color: "#7ED957",
+                marginBottom: "16px",
+                textTransform: "uppercase",
+              }}
+            >
+              Servicios
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+              {colServicios.map((link) => (
+                <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
+              ))}
+            </ul>
+          </div>
+
+          {/* Col 4 — Legal */}
+          <div>
+            <h4
+              style={{
+                fontFamily: "'Bebas Neue', Impact, sans-serif",
+                fontSize: "0.9rem",
+                letterSpacing: "0.15em",
+                color: "#7ED957",
+                marginBottom: "16px",
+                textTransform: "uppercase",
+              }}
+            >
+              Legal
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+              {colLegal.map((link) => (
+                <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
+
+      {/* ── Bottom Bar ─────────────────────────────────────────────── */}
+      <div
+        style={{
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        <div
+          className="container"
+          style={{
+            padding: "20px 1rem",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontSize: "0.75rem",
+              color: "#444",
+              textAlign: "center",
+            }}
+          >
+            © 2025 Cobrafantasmas. Todos los derechos reservados.
+          </p>
+          <p
+            style={{
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontSize: "0.72rem",
+              color: "#333",
+              textAlign: "center",
+              maxWidth: "600px",
+            }}
+          >
+            Servicio de recuperación extrajudicial de deudas. Actuamos dentro del marco legal español y RGPD.
+          </p>
+        </div>
+      </div>
+
+      {/* Grid responsive styles */}
+      <style>{`
+        @media (min-width: 640px) {
+          .footer-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (min-width: 1024px) {
+          .footer-grid {
+            grid-template-columns: repeat(4, 1fr) !important;
+          }
+        }
+      `}</style>
     </footer>
   );
 }

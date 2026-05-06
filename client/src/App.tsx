@@ -10,6 +10,12 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 
 // ── PUBLIC PAGES (carga inmediata — visibles sin autenticación) ──────────────
 import Home from "./pages/Home";
+import ComoFunciona from "./pages/ComoFunciona";
+import Protocolos from "./pages/Protocolos";
+import ElSistema from "./pages/ElSistema";
+import Casos from "./pages/Casos";
+import PreguntasFrecuentes from "./pages/PreguntasFrecuentes";
+import ActivarCaso from "./pages/ActivarCaso";
 import Experiences from "./pages/Experiences";
 import ExperienceDetail from "./pages/ExperienceDetail";
 import Gallery from "./pages/Gallery";
@@ -151,6 +157,12 @@ function Router() {
     <Switch>
       {/* ── PUBLIC ROUTES ── */}
       <Route path="/" component={Home} />
+      <Route path="/como-funciona" component={ComoFunciona} />
+      <Route path="/protocolos" component={Protocolos} />
+      <Route path="/el-sistema" component={ElSistema} />
+      <Route path="/casos" component={Casos} />
+      <Route path="/preguntas-frecuentes" component={PreguntasFrecuentes} />
+      <Route path="/activar-caso" component={ActivarCaso} />
       <Route path="/experiencias" component={Experiences} />
       <Route path="/experiencias/:slug" component={ExperienceDetail} />
       <Route path="/galeria" component={Gallery} />
