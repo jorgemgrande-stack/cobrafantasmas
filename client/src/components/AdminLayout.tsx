@@ -302,7 +302,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
-  const LOGO_FALLBACK = "https://d2xsxph8kpxj0f.cloudfront.net/310519663410228097/AV298FS8t5SaTurBBRqhgQ/nayade_blue_e9563f49.png";
+  const LOGO_FALLBACK = "/logo_cobrafantasmas_web.png";
   const brandLogo = publicSettings?.brand_logo_url || LOGO_FALLBACK;
   const brandName = publicSettings?.brand_name || "Admin";
 

@@ -41,45 +41,12 @@ export default function PublicNav() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
 
           {/* Logo */}
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none" }}>
-            <div style={{ lineHeight: 1 }}>
-              <span
-                style={{
-                  fontFamily: "'Bebas Neue', Impact, sans-serif",
-                  fontSize: "1.75rem",
-                  letterSpacing: "0.04em",
-                  color: "#FFFFFF",
-                  lineHeight: 1,
-                }}
-              >
-                COBRA
-              </span>
-              <span
-                style={{
-                  fontFamily: "'Bebas Neue', Impact, sans-serif",
-                  fontSize: "1.75rem",
-                  letterSpacing: "0.04em",
-                  color: "#7ED957",
-                  lineHeight: 1,
-                }}
-              >
-                FANTASMAS
-              </span>
-            </div>
-            <span
-              className="hidden lg:block"
-              style={{
-                fontFamily: "'Inter', system-ui, sans-serif",
-                fontSize: "0.65rem",
-                color: "#666",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                maxWidth: "100px",
-                lineHeight: 1.3,
-              }}
-            >
-              Servicio de recuperación de deudas
-            </span>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
+            <img
+              src="/logo_cobrafantasmas_web.png"
+              alt="Cobrafantasmas"
+              style={{ height: "48px", width: "auto", objectFit: "contain" }}
+            />
           </Link>
 
           {/* Navegación desktop */}

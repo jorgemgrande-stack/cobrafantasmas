@@ -134,13 +134,13 @@ export default function TpvTicket({ open, sale, onClose }: Props) {
           <div ref={ticketRef}>
             <div className="center" style={{ marginBottom: "6px" }}>
               <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663410228097/AV298FS8t5SaTurBBRqhgQ/nayade_logo_ticket_30350573.png"
-                alt="Náyade"
+                src="/logo_cobrafantasmas_web.png"
+                alt="Cobrafantasmas"
                 style={{ width: "72px", height: "72px", objectFit: "contain", display: "inline-block" }}
               />
             </div>
-            <div className="center bold text-sm">NÁYADE EXPERIENCES</div>
-            <div className="center text-xs">Los Ángeles de San Rafael · Segovia</div>
+            <div className="center bold text-sm">COBRAFANTASMAS</div>
+            <div className="center text-xs">Servicio de recuperación de deudas</div>
             <div style={{ borderTop: "1px dashed #000", margin: "4px 0" }} />
             <div className="center" style={{ fontSize: "9px", color: "#555" }}>Iron Elephant Consulting S.L. · CIF: B26987875</div>
             <div className="center" style={{ fontSize: "9px", color: "#555" }}>C/ Corazón de María 57, 1º D</div>

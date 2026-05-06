@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, Eye, EyeOff, Lock, AlertCircle, Loader2 } from "lucide-react";
 
-// Náyade logo URL (blue version)
-const LOGO_URL = "https://cdn-biz.manus.space/biz-file/c1/AV298FS8t5SaTurBBRqhgQ/1741956872-nayade_logo_azul.jpg";
+const LOGO_URL = "/logo_cobrafantasmas_web.png";
 
 export default function SetPassword() {
   const [, setLocation] = useLocation();
