@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
-import { LayoutGrid, CheckCircle, Loader2, ImageIcon } from "lucide-react";
+import { LayoutGrid, CheckCircle, Loader2, ImageIcon, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Secciones de la home de Cobrafantasmas ──────────────────────────────────
@@ -36,6 +36,8 @@ function BlockEditor({
   const [opacity, setOpacity] = useState(currentOpacity);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const setBlockImage = trpc.homeModules.setBlockImage.useMutation({
     onSuccess: () => {
@@ -54,6 +56,26 @@ function BlockEditor({
     setSaving(true);
     setSaved(false);
     setBlockImage.mutate({ blockKey, imageUrl, opacity });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await fetch("/api/upload/image", { method: "POST", body: fd, credentials: "include" });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Error al subir");
+      const { url } = await res.json();
+      setImageUrl(url);
+      toast.success("Imagen subida correctamente");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al subir");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const opacityPct = Math.round(opacity * 100);
@@ -109,16 +131,52 @@ function BlockEditor({
             </div>
           </div>
 
-          {/* URL de imagen */}
+          {/* Subida de imagen */}
           <div className="mt-2 mb-3">
-            <label className="block text-[11px] text-muted-foreground mb-1">URL de imagen de fondo</label>
+            <label className="block text-[11px] text-muted-foreground mb-1">Imagen de fondo</label>
             <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://... o /local-storage/..."
-              className="w-full bg-background border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-[#7ED957]/50"
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+              className="hidden"
+              onChange={handleFileChange}
             />
+            {imageUrl ? (
+              <div className="flex items-center gap-2">
+                <span className="flex-1 text-xs text-foreground/70 truncate bg-background border border-border rounded-md px-3 py-1.5">
+                  {imageUrl.split("/").pop()}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="shrink-0 flex items-center gap-1 bg-background border border-border hover:border-[#7ED957]/60 text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md transition-colors disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                  Cambiar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageUrl("")}
+                  className="shrink-0 p-1.5 rounded-md border border-border hover:border-red-500/60 text-muted-foreground hover:text-red-400 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-border hover:border-[#7ED957]/50 rounded-md py-3 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                {uploading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo...</>
+                ) : (
+                  <><Upload className="w-4 h-4" /> Subir imagen</>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Slider de opacidad */}
