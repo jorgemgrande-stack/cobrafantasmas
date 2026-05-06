@@ -289,7 +289,7 @@ export default function Home() {
           MÓDULO 1 — HERO
       ══════════════════════════════════════════════════════════════════════════ */}
       <section
-        className="relative min-h-screen flex items-center overflow-hidden"
+        className="relative h-screen flex items-center overflow-hidden"
         style={{ backgroundColor: "#0A0A0A" }}
       >
         {/* Imagen/GIF de fondo del slide (CMS) — img tag para que los GIFs animen */}
@@ -322,13 +322,13 @@ export default function Home() {
           }}
         />
 
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-          <div className="flex flex-col lg:flex-row items-start gap-12 lg:gap-16">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-6 lg:pt-24 lg:pb-8">
+          <div className="flex flex-col lg:flex-row items-start gap-8 lg:gap-12">
             {/* Columna izquierda — Texto y claims */}
-            <div className="w-full lg:w-3/5 flex flex-col gap-8">
+            <div className="w-full lg:w-3/5 flex flex-col gap-4">
               {/* Slide content */}
               <div
-                className="flex flex-col gap-4 transition-all duration-300"
+                className="flex flex-col gap-2 transition-all duration-300"
                 style={{
                   opacity: slideVisible ? 1 : 0,
                   transform: slideVisible
@@ -338,17 +338,17 @@ export default function Home() {
               >
                 <span className="hud-label">{slide.label}</span>
                 <h1
-                  className="font-display text-6xl md:text-8xl text-white leading-none"
+                  className="font-display text-4xl md:text-5xl lg:text-[3.25rem] text-white leading-[1.05]"
                   style={{ whiteSpace: "pre-line" }}
                 >
                   {slide.claim}
                   {"\n"}
                   <span className="text-neon">{slide.claimHighlight}</span>
                 </h1>
-                <p className="text-lg md:text-xl text-white/60 max-w-lg">
+                <p className="text-sm md:text-base text-white/60 max-w-lg">
                   {slide.subclaim}
                 </p>
-                <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center gap-4 mt-1">
                   <Link href={slide.ctaHref}>
                     <Button
                       className="bg-danger hover:bg-red-700 text-white font-semibold px-8 py-3 text-base rounded-md transition-colors"
@@ -361,7 +361,7 @@ export default function Home() {
               </div>
 
               {/* Controles del slideshow */}
-              <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-4 mt-2">
                 <button
                   onClick={prevSlide}
                   className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-white/50 hover:border-neon hover:text-neon transition-colors"
@@ -428,9 +428,9 @@ export default function Home() {
             </div>
 
             {/* Columna derecha — Formulario */}
-            <div className="w-full lg:w-2/5 lg:self-start lg:sticky lg:top-8">
+            <div className="w-full lg:w-2/5 lg:self-start">
               <div
-                className="p-6 md:p-8 rounded-xl"
+                className="p-4 md:p-5 rounded-xl"
                 style={{
                   background: "rgba(15,15,15,0.9)",
                   border: "1px solid rgba(126,217,87,0.3)",
@@ -438,14 +438,14 @@ export default function Home() {
                   backdropFilter: "blur(10px)",
                 }}
               >
-                <h2 className="font-display text-2xl text-white mb-1">
+                <h2 className="font-display text-xl text-white mb-0.5">
                   ¿Te deben dinero?
                 </h2>
-                <p className="text-sm text-white/40 mb-6">
+                <p className="text-xs text-white/40 mb-3">
                   Análisis de viabilidad sin compromiso.
                 </p>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="nombre" className="text-white/70 text-xs">
                       Nombre *
@@ -558,7 +558,7 @@ export default function Home() {
                     </Label>
                     <Textarea
                       id="descripcion"
-                      rows={3}
+                      rows={2}
                       value={form.descripcion}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, descripcion: e.target.value }))
@@ -568,7 +568,7 @@ export default function Home() {
                     />
                   </div>
 
-                  <div className="flex items-start gap-3 mt-1">
+                  <div className="flex items-start gap-3">
                     <Checkbox
                       id="privacidad"
                       checked={form.privacidad}
@@ -597,7 +597,7 @@ export default function Home() {
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="w-full font-semibold text-white py-3 mt-2 rounded-md transition-colors"
+                    className="w-full font-semibold text-white py-2 rounded-md transition-colors"
                     style={{
                       backgroundColor: submitting ? "#a01218" : "#E41E26",
                     }}
@@ -606,7 +606,7 @@ export default function Home() {
                   </Button>
                 </form>
 
-                <p className="text-center text-xs text-white/30 mt-4">
+                <p className="text-center text-xs text-white/30 mt-2">
                   Evaluación inicial gratuita. Sin compromiso.
                 </p>
               </div>
