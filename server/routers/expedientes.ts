@@ -1069,6 +1069,160 @@ export const expedientesRouter = router({
       return { success: true };
     }),
 
+  // ── Motor de scoring IA ───────────────────────────────────────────────────
+
+  calcularScoring: staffProcedure
+    .input(z.object({ expedienteId: z.number() }))
+    .query(async ({ input }) => {
+      const [exp] = await db.select().from(expedientes).where(eq(expedientes.id, input.expedienteId));
+      if (!exp) throw new TRPCError({ code: "NOT_FOUND", message: "Expediente no encontrado" });
+
+      // Deudor vinculado
+      const deudor = exp.deudorId
+        ? (await db.select().from(deudores).where(eq(deudores.id, exp.deudorId)))[0]
+        : null;
+
+      // Acciones de los últimos 14 días
+      const hace14 = new Date(Date.now() - 14 * 86400_000);
+      const accionesRecientes = await db
+        .select({ id: accionesOperativas.id, estado: accionesOperativas.estado, updatedAt: accionesOperativas.updatedAt })
+        .from(accionesOperativas)
+        .where(and(
+          eq(accionesOperativas.expedienteId, input.expedienteId),
+          gte(accionesOperativas.updatedAt, hace14),
+        ));
+
+      const accionesCompletadas = accionesRecientes.filter(a => a.estado === "completada").length;
+
+      // Días sin actividad (desde última acción o updatedAt)
+      const ultimaActividad = exp.updatedAt ? new Date(exp.updatedAt) : new Date(exp.createdAt);
+      const diasSinActividad = Math.floor((Date.now() - ultimaActividad.getTime()) / 86400_000);
+
+      // Ratio financiero
+      const deudaTotal  = parseFloat(exp.importeDeuda ?? "0");
+      const recuperado  = parseFloat(exp.importeRecuperado ?? "0");
+      const recupeRate  = deudaTotal > 0 ? (recuperado / deudaTotal) * 100 : 0;
+
+      // ── Cálculo de factores ─────────────────────────────────────────────────
+      type Factor = { nombre: string; impacto: number; descripcion: string };
+      const factores: Factor[] = [];
+      let score = 50;
+
+      // 1. Estado
+      const estadoScores: Record<string, number> = {
+        pendiente_activacion: -10, estrategia_inicial: 0,
+        operativo_activo: 5,       negociacion: 15,
+        acuerdo_parcial: 20,       recuperacion_parcial: 25,
+        recuperado: 50,            incobrable: -40,
+        suspendido: -30,           escalada_juridica: 5,
+        finalizado: 20,
+      };
+      const estadoImpacto = estadoScores[exp.estado ?? ""] ?? 0;
+      factores.push({ nombre: "Estado del expediente", impacto: estadoImpacto, descripcion: `Estado actual: ${exp.estado}` });
+      score += estadoImpacto;
+
+      // 2. Progreso financiero
+      let finImpacto = 0;
+      if (recupeRate >= 80) finImpacto = 15;
+      else if (recupeRate >= 50) finImpacto = 10;
+      else if (recupeRate >= 20) finImpacto = 5;
+      else if (recupeRate === 0 && deudaTotal > 0) finImpacto = -5;
+      if (finImpacto !== 0) {
+        factores.push({ nombre: "Progreso financiero", impacto: finImpacto, descripcion: `${Math.round(recupeRate)}% recuperado` });
+        score += finImpacto;
+      }
+
+      // 3. Actividad reciente
+      let actImpacto = 0;
+      if (diasSinActividad < 7) actImpacto = 10;
+      else if (diasSinActividad <= 14) actImpacto = 0;
+      else if (diasSinActividad <= 30) actImpacto = -10;
+      else actImpacto = -20;
+      factores.push({ nombre: "Actividad reciente", impacto: actImpacto, descripcion: `${diasSinActividad} días sin actualización` });
+      score += actImpacto;
+
+      // 4. Acciones completadas (14d)
+      let complImpacto = 0;
+      if (accionesCompletadas >= 5) complImpacto = 10;
+      else if (accionesCompletadas >= 2) complImpacto = 5;
+      else if (accionesCompletadas === 0 && ["operativo_activo", "negociacion"].includes(exp.estado ?? "")) complImpacto = -8;
+      if (complImpacto !== 0) {
+        factores.push({ nombre: "Acciones completadas (14d)", impacto: complImpacto, descripcion: `${accionesCompletadas} acciones completadas` });
+        score += complImpacto;
+      }
+
+      // 5. Intensidad operativa
+      const intens = exp.intensidadOperativa ?? 1;
+      let intensImpacto = 0;
+      if (intens >= 4) intensImpacto = 5;
+      else if (intens <= 1) intensImpacto = -5;
+      if (intensImpacto !== 0) {
+        factores.push({ nombre: "Intensidad operativa", impacto: intensImpacto, descripcion: `Nivel ${intens} de 5` });
+        score += intensImpacto;
+      }
+
+      // 6. Cooperación del deudor (si vinculado)
+      if (deudor) {
+        const coopScores: Record<string, number> = { colaborador: 15, desconocido: 0, evasivo: -10, hostil: -15, bloqueado: -20 };
+        const coopImpacto = coopScores[deudor.nivelCooperacion ?? "desconocido"] ?? 0;
+        if (coopImpacto !== 0) {
+          factores.push({ nombre: "Cooperación del deudor", impacto: coopImpacto, descripcion: `Nivel: ${deudor.nivelCooperacion}` });
+          score += coopImpacto;
+        }
+
+        // 7. Riesgo del deudor
+        const riesgo = deudor.nivelRiesgo ?? 50;
+        let riesgoImpacto = 0;
+        if (riesgo < 30) riesgoImpacto = 10;
+        else if (riesgo < 50) riesgoImpacto = 5;
+        else if (riesgo > 85) riesgoImpacto = -20;
+        else if (riesgo > 70) riesgoImpacto = -10;
+        if (riesgoImpacto !== 0) {
+          factores.push({ nombre: "Perfil de riesgo deudor", impacto: riesgoImpacto, descripcion: `Riesgo ${riesgo}/100` });
+          score += riesgoImpacto;
+        }
+      }
+
+      // Clampar 0-100
+      score = Math.min(100, Math.max(0, Math.round(score)));
+
+      // ── Recomendación táctica ───────────────────────────────────────────────
+      let recomendacion: string;
+      if (exp.estado === "recuperado") {
+        recomendacion = "Expediente cerrado con éxito. Emitir factura de éxito y archivar documentación.";
+      } else if (exp.estado === "incobrable") {
+        recomendacion = "Revisar si hay nuevos activos o cambio de situación antes de archivar definitivamente.";
+      } else if (score >= 80) {
+        recomendacion = "Perfil muy favorable — presionar para pago inmediato o cierre definitivo esta semana.";
+      } else if (score >= 65) {
+        recomendacion = "Buen progreso — enfocar en formalizar un acuerdo de pago en los próximos días.";
+      } else if (score >= 50) {
+        recomendacion = "Seguimiento necesario — mantener presión constante y documentar cada contacto.";
+      } else if (score >= 35) {
+        recomendacion = "Caso en riesgo — aumentar intensidad operativa o rediseñar la estrategia de contacto.";
+      } else {
+        recomendacion = "Caso crítico — revisar viabilidad real, considerar escalada jurídica o cierre por incobrable.";
+      }
+
+      // ── Alertas ─────────────────────────────────────────────────────────────
+      const alertas: string[] = [];
+      if (diasSinActividad > 14) alertas.push(`Sin actividad en ${diasSinActividad} días`);
+      if ((intens >= 4) && accionesCompletadas === 0) alertas.push("Alta intensidad sin acciones completadas esta quincena");
+      if (recupeRate === 0 && diasSinActividad > 30) alertas.push("Sin cobros registrados y expediente inactivo más de 30 días");
+      if (deudor?.nivelCooperacion === "bloqueado") alertas.push("Deudor marcado como bloqueado — contacto muy difícil");
+
+      return {
+        score,
+        factores: factores.sort((a, b) => Math.abs(b.impacto) - Math.abs(a.impacto)),
+        recomendacion,
+        alertas,
+        diasSinActividad,
+        accionesCompletadas,
+        recupeRate: Math.round(recupeRate * 10) / 10,
+        deudorVinculado: deudor ? { nombre: deudor.nombre, nivelCooperacion: deudor.nivelCooperacion } : null,
+      };
+    }),
+
   // ── Audit log de cambios ──────────────────────────────────────────────────
 
   auditLog: staffProcedure

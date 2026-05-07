@@ -774,7 +774,7 @@ function ExpedienteDetail({
   const [deleteAccionId, setDeleteAccionId] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [cobroOpen, setCobroOpen] = useState(false);
-  const [tab, setTab] = useState<"registro" | "hitos" | "automatizaciones">("registro");
+  const [tab, setTab] = useState<"registro" | "hitos" | "automatizaciones" | "inteligencia">("registro");
   const [linkCopied, setLinkCopied] = useState(false);
 
   const { data, isLoading, refetch } = trpc.expedientes.get.useQuery({ id: expedienteId });
@@ -782,6 +782,10 @@ function ExpedienteDetail({
   const { data: autoLogs = [], refetch: refetchLogs } = trpc.expedientes.automationLogs.useQuery(
     { expedienteId },
     { enabled: tab === "automatizaciones" }
+  );
+  const { data: scoring, isLoading: loadingScoring } = trpc.expedientes.calcularScoring.useQuery(
+    { expedienteId },
+    { enabled: tab === "inteligencia" }
   );
   const revertMut = trpc.expedientes.revertAutomation.useMutation({ onSuccess: () => { refetchLogs(); refetch(); } });
   const generateTokenMut = trpc.expedientes.generateLandingToken.useMutation({
@@ -926,7 +930,7 @@ function ExpedienteDetail({
           {/* Tabs registro / hitos / automatizaciones */}
           <div>
             <div className="flex gap-1 mb-4 bg-white/[0.03] rounded-lg p-1 w-fit flex-wrap">
-              {(["registro", "hitos", "automatizaciones"] as const).map((t) => (
+              {(["registro", "hitos", "automatizaciones", "inteligencia"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -936,6 +940,7 @@ function ExpedienteDetail({
                 >
                   {t === "registro" ? `Registro (${registro.length})`
                     : t === "hitos" ? `Hitos (${hitos.length})`
+                    : t === "inteligencia" ? "🤖 Inteligencia"
                     : "Automatizaciones"}
                 </button>
               ))}
@@ -1143,6 +1148,110 @@ function ExpedienteDetail({
                 )}
               </div>
             )}
+
+            {tab === "inteligencia" && (
+              <div className="space-y-4">
+                {loadingScoring ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : !scoring ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Sin datos de scoring</p>
+                ) : (
+                  <>
+                    {/* Score gauge */}
+                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5 text-center">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Score operativo</p>
+                      <div className="relative inline-flex items-center justify-center">
+                        <div className={`text-5xl font-black tabular-nums ${
+                          scoring.score >= 70 ? "text-green-400"
+                          : scoring.score >= 40 ? "text-yellow-400"
+                          : "text-red-400"
+                        }`}>
+                          {scoring.score}
+                        </div>
+                        <span className="text-lg text-muted-foreground ml-1 self-end mb-1">/100</span>
+                      </div>
+                      <div className="mt-3 h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${
+                            scoring.score >= 70 ? "bg-green-500"
+                            : scoring.score >= 40 ? "bg-yellow-500"
+                            : "bg-red-500"
+                          }`}
+                          style={{ width: `${scoring.score}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {scoring.diasSinActividad !== null
+                          ? `${scoring.diasSinActividad}d sin actividad · ${scoring.accionesCompletadas} acciones (14d)`
+                          : `${scoring.accionesCompletadas} acciones completadas (14d)`}
+                      </p>
+                    </div>
+
+                    {/* Recomendación */}
+                    <div className={`border rounded-xl p-4 ${
+                      scoring.score >= 70 ? "border-green-500/20 bg-green-500/[0.04]"
+                      : scoring.score >= 40 ? "border-yellow-500/20 bg-yellow-500/[0.04]"
+                      : "border-red-500/20 bg-red-500/[0.04]"
+                    }`}>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Recomendación operativa</p>
+                      <p className="text-sm leading-relaxed">{scoring.recomendacion}</p>
+                    </div>
+
+                    {/* Alertas */}
+                    {scoring.alertas.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Alertas</p>
+                        {scoring.alertas.map((alerta: string, i: number) => (
+                          <div key={i} className="flex items-start gap-2 bg-orange-500/[0.05] border border-orange-500/20 rounded-lg px-3 py-2">
+                            <AlertTriangle className="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" />
+                            <span className="text-xs text-orange-300">{alerta}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Factores */}
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Factores de scoring</p>
+                      <div className="space-y-1.5">
+                        {scoring.factores.map((f: any) => (
+                          <div key={f.nombre} className="flex items-center gap-3 bg-white/[0.02] border border-white/[0.04] rounded-lg px-3 py-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">{f.nombre}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{f.detalle}</p>
+                            </div>
+                            <span className={`text-sm font-bold tabular-nums shrink-0 ${
+                              f.impacto > 0 ? "text-green-400"
+                              : f.impacto < 0 ? "text-red-400"
+                              : "text-muted-foreground"
+                            }`}>
+                              {f.impacto > 0 ? `+${f.impacto}` : f.impacto}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Deudor vinculado */}
+                    {scoring.deudorVinculado && (
+                      <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-2">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Deudor vinculado</p>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                          <span className="text-muted-foreground">Nombre</span>
+                          <span className="font-medium">{scoring.deudorVinculado.nombre}</span>
+                          <span className="text-muted-foreground">Cooperación</span>
+                          <span className="font-medium capitalize">{scoring.deudorVinculado.nivelCooperacion}</span>
+                          <span className="text-muted-foreground">Riesgo</span>
+                          <span className="font-medium">{scoring.deudorVinculado.nivelRiesgo}/100</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Enlace de seguimiento para el acreedor */}
@@ -1206,8 +1315,8 @@ function ExpedienteDetail({
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Próximamente</p>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { icon: "🤖", label: "IA Operativa", sub: "Scoring y sugerencias automáticas" },
                 { icon: "📎", label: "Evidencias", sub: "Audios, fotos, documentos" },
+                { icon: "✍️", label: "Firma digital", sub: "Acuerdos y contratos" },
               ].map((item) => (
                 <div key={item.label} className="bg-white/[0.02] border border-white/[0.04] rounded-lg p-3 opacity-50">
                   <span className="text-xl">{item.icon}</span>
