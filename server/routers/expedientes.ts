@@ -762,7 +762,6 @@ export const expedientesRouter = router({
   // ── Rankings y estadísticas globales ──────────────────────────────────────
 
   rankings: staffProcedure.query(async () => {
-    try {
     const allExps = await db
       .select({
         id:               expedientes.id,
@@ -873,11 +872,5 @@ export const expedientesRouter = router({
       cazadorRanking,
       ultimasRecuperaciones,
     };
-    } catch (err: any) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: `Rankings error: ${err?.message ?? String(err)}`,
-      });
-    }
   }),
 });

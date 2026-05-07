@@ -35,7 +35,7 @@ const ESTADO_COLOR: Record<string, string> = {
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default function RankingsManager() {
-  const { data, isLoading, isError, error } = trpc.expedientes.rankings.useQuery(
+  const { data, isLoading, isError } = trpc.expedientes.rankings.useQuery(
     undefined as any,
     { refetchInterval: 60_000 },
   );
@@ -50,11 +50,8 @@ export default function RankingsManager() {
 
   if (isError || !data) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-2 text-sm">
-        <p className="text-red-400 font-medium">Error cargando rankings</p>
-        <p className="text-slate-500 font-mono text-xs max-w-lg text-center">
-          {(error as any)?.message ?? (error as any)?.data?.message ?? "Error desconocido"}
-        </p>
+      <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
+        Error cargando rankings.
       </div>
     );
   }
