@@ -85,6 +85,7 @@ const navItems = [
     icon: Calendar,
     roles: ["admin", "agente", "monitor"],
     children: [
+      { label: "Centro de Control", href: "/admin/operaciones/control-centro" },
       { label: "Expedientes Operativos", href: "/admin/operaciones/expedientes" },
       { label: "Rankings de Cazadores", href: "/admin/operaciones/rankings" },
       { label: "Cazadores", href: "/admin/operaciones/monitores" },
