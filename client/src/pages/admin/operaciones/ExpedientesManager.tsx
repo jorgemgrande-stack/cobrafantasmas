@@ -34,7 +34,7 @@ import {
   Mail, MapPin, User, X, Zap, Target, TrendingUp, Shield,
   AlertTriangle, CheckCircle2, Clock, ChevronRight, Flag,
   Star, Activity, BarChart3, Crosshair, Eye, EyeOff,
-  Link2, Copy, Check, RefreshCw,
+  Link2, Copy, Check, RefreshCw, DollarSign,
 } from "lucide-react";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -620,6 +620,148 @@ function AccionModal({
 
 // ─── Panel de detalle ─────────────────────────────────────────────────────────
 
+// ─── Cobro Modal ──────────────────────────────────────────────────────────────
+
+function CobroModal({
+  open, onClose, expediente, onSaved,
+}: {
+  open: boolean; onClose: () => void; expediente: any; onSaved: () => void;
+}) {
+  const [importe, setImporte] = useState("");
+  const [concepto, setConcepto] = useState("");
+  const [metodoPago, setMetodoPago] = useState("transferencia");
+  const [fechaPago, setFechaPago] = useState(new Date().toISOString().slice(0, 10));
+  const [notas, setNotas] = useState("");
+  const [cerrar, setCerrar] = useState(false);
+
+  const importeDeuda      = parseFloat(expediente?.importeDeuda ?? "0");
+  const importeRecuperado = parseFloat(expediente?.importeRecuperado ?? "0");
+  const pendiente         = Math.max(0, importeDeuda - importeRecuperado);
+  const importeNum        = parseFloat(importe) || 0;
+  const nuevoTotal        = importeRecuperado + importeNum;
+  const cubreDeuda        = nuevoTotal >= importeDeuda;
+
+  const cobroMut = trpc.expedientes.registrarCobro.useMutation({
+    onSuccess: () => { onSaved(); onClose(); },
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    cobroMut.mutate({
+      expedienteId:    expediente.id,
+      importe:         importeNum,
+      concepto,
+      metodoPago:      metodoPago as any,
+      fechaPago,
+      notas:           notas || undefined,
+      cerrarExpediente: cerrar,
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md bg-[#0d0f14] border-white/10">
+        <DialogHeader>
+          <DialogTitle className="text-base font-semibold flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-green-400" />
+            Registrar cobro — {expediente?.numeroExpediente}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Resumen financiero */}
+        <div className="grid grid-cols-3 gap-2 text-center bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
+          <div>
+            <p className="text-[10px] text-muted-foreground">Deuda total</p>
+            <p className="text-sm font-bold">{fmtEuro(expediente?.importeDeuda)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-muted-foreground">Ya recuperado</p>
+            <p className="text-sm font-bold text-green-400">{fmtEuro(expediente?.importeRecuperado)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-muted-foreground">Pendiente</p>
+            <p className="text-sm font-bold text-orange-400">{fmtEuro(pendiente)}</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3 mt-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label className="text-xs">Importe cobrado (€) *</Label>
+              <Input
+                type="number" min="0.01" step="0.01"
+                value={importe} onChange={(e) => setImporte(e.target.value)}
+                required placeholder="0.00" className="mt-1"
+              />
+              {importeNum > 0 && (
+                <p className={`text-xs mt-1 ${cubreDeuda ? "text-green-400" : "text-orange-400"}`}>
+                  Quedará pendiente: <strong>{fmtEuro(Math.max(0, importeDeuda - nuevoTotal))}</strong>
+                  {cubreDeuda && " — ¡deuda cubierta!"}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label className="text-xs">Método de pago</Label>
+              <Select value={metodoPago} onValueChange={setMetodoPago}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="transferencia">Transferencia</SelectItem>
+                  <SelectItem value="efectivo">Efectivo</SelectItem>
+                  <SelectItem value="bizum">Bizum</SelectItem>
+                  <SelectItem value="cheque">Cheque</SelectItem>
+                  <SelectItem value="redsys">Redsys TPV</SelectItem>
+                  <SelectItem value="otro">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Fecha de cobro</Label>
+              <Input type="date" value={fechaPago} onChange={(e) => setFechaPago(e.target.value)} className="mt-1" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Concepto *</Label>
+              <Input
+                value={concepto} onChange={(e) => setConcepto(e.target.value)}
+                required placeholder="Pago único, primer plazo, liquidación..." className="mt-1"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Notas internas</Label>
+              <Textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className="mt-1 resize-none text-sm" />
+            </div>
+          </div>
+
+          {cubreDeuda && (
+            <label className="flex items-center gap-2.5 p-3 rounded-lg border border-green-500/20 bg-green-500/[0.04] cursor-pointer hover:bg-green-500/[0.08] transition-colors">
+              <input
+                type="checkbox" checked={cerrar} onChange={(e) => setCerrar(e.target.checked)}
+                className="w-3.5 h-3.5 accent-green-500"
+              />
+              <div>
+                <p className="text-sm font-medium text-green-300">Marcar expediente como recuperado</p>
+                <p className="text-xs text-muted-foreground">Cambia el estado a "Recuperado" y registra la fecha de cierre</p>
+              </div>
+            </label>
+          )}
+
+          {cobroMut.error && <p className="text-xs text-red-400">{cobroMut.error.message}</p>}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+            <Button type="submit" size="sm" disabled={cobroMut.isPending || !importe || !concepto} className="bg-green-600 hover:bg-green-500 text-white">
+              {cobroMut.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+              <DollarSign className="w-3.5 h-3.5 mr-1" />
+              Registrar cobro
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Expediente Detail ────────────────────────────────────────────────────────
+
 function ExpedienteDetail({
   expedienteId, cazadores, onClose, onEdited,
 }: {
@@ -631,6 +773,7 @@ function ExpedienteDetail({
   const [accionModal, setAccionModal] = useState<{ open: boolean; accion: any | null }>({ open: false, accion: null });
   const [deleteAccionId, setDeleteAccionId] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [cobroOpen, setCobroOpen] = useState(false);
   const [tab, setTab] = useState<"registro" | "hitos" | "automatizaciones">("registro");
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -691,6 +834,15 @@ function ExpedienteDetail({
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 text-xs gap-1 text-green-400 border-green-500/30 hover:bg-green-500/10"
+              onClick={() => setCobroOpen(true)}
+            >
+              <DollarSign className="w-3 h-3" />
+              Cobro
+            </Button>
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditOpen(true)}>
               <Edit2 className="w-3.5 h-3.5" />
             </Button>
@@ -1075,6 +1227,14 @@ function ExpedienteDetail({
           accion={accionModal.accion?.id ? accionModal.accion : null}
           cazadores={cazadores}
           onSaved={() => refetch()}
+        />
+      )}
+
+      {cobroOpen && (
+        <CobroModal
+          open onClose={() => setCobroOpen(false)}
+          expediente={data}
+          onSaved={() => { refetch(); onEdited(); }}
         />
       )}
 

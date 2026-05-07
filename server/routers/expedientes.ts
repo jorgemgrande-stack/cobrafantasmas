@@ -812,6 +812,90 @@ export const expedientesRouter = router({
       return byDate;
     }),
 
+  // ── Registro de cobros ────────────────────────────────────────────────────
+
+  registrarCobro: staffProcedure
+    .input(z.object({
+      expedienteId:    z.number(),
+      importe:         z.number().positive(),
+      concepto:        z.string().min(1),
+      metodoPago:      z.enum(["transferencia", "efectivo", "bizum", "cheque", "redsys", "otro"]).default("transferencia"),
+      fechaPago:       z.string().optional(),
+      notas:           z.string().optional(),
+      cerrarExpediente: z.boolean().default(false),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const [exp] = await db.select().from(expedientes).where(eq(expedientes.id, input.expedienteId));
+      if (!exp) throw new TRPCError({ code: "NOT_FOUND", message: "Expediente no encontrado" });
+
+      const importeAnterior = parseFloat(exp.importeRecuperado ?? "0");
+      const importeDeuda    = parseFloat(exp.importeDeuda ?? "0");
+      const nuevoRecuperado = importeAnterior + input.importe;
+      const nuevoProgreso   = importeDeuda > 0 ? Math.min(100, Math.round((nuevoRecuperado / importeDeuda) * 100)) : 0;
+      const cubreDeuda      = nuevoRecuperado >= importeDeuda;
+
+      const updateData: Record<string, unknown> = {
+        importeRecuperado: String(nuevoRecuperado),
+        progresoFinanciero: nuevoProgreso,
+      };
+
+      if (input.cerrarExpediente && cubreDeuda) {
+        updateData.estado      = "recuperado";
+        updateData.fechaCierre = (input.fechaPago ?? new Date().toISOString().slice(0, 10));
+      } else if (nuevoRecuperado > 0 && exp.estado === "pendiente_activacion") {
+        updateData.estado = "recuperacion_parcial";
+      }
+
+      await db.update(expedientes).set(updateData).where(eq(expedientes.id, input.expedienteId));
+
+      // Acción de tipo hito si cubre la deuda, seguimiento si es parcial
+      const esCierre = input.cerrarExpediente && cubreDeuda;
+      const fechaCompletada = new Date(input.fechaPago ?? new Date().toISOString().slice(0, 10));
+      const metodosLabel: Record<string, string> = {
+        transferencia: "Transferencia", efectivo: "Efectivo",
+        bizum: "Bizum", cheque: "Cheque", redsys: "Redsys TPV", otro: "Otro",
+      };
+
+      await db.insert(accionesOperativas).values({
+        expedienteId: input.expedienteId,
+        tipo:         (esCierre ? "hito" : "seguimiento") as any,
+        titulo:       esCierre
+          ? `Cobro final — Deuda recuperada (${String(nuevoRecuperado.toFixed(2))} €)`
+          : `Cobro parcial — ${String(input.importe.toFixed(2))} € (${input.concepto})`,
+        descripcion:  [
+          `Importe cobrado: ${input.importe.toFixed(2)} €`,
+          `Método: ${metodosLabel[input.metodoPago] ?? input.metodoPago}`,
+          `Total recuperado: ${nuevoRecuperado.toFixed(2)} € de ${importeDeuda.toFixed(2)} €`,
+          input.notas ? `Notas: ${input.notas}` : "",
+        ].filter(Boolean).join("\n"),
+        prioridad:       "alta" as any,
+        estado:          "completada" as any,
+        fechaCompletada,
+        visibleCliente:  true,
+        createdBy:       ctx.user.id,
+        notasInternas:   input.notas,
+      });
+
+      // Audit log
+      db.insert(expedienteAuditLog).values([
+        { expedienteId: input.expedienteId, campo: "importeRecuperado", valorAnterior: String(importeAnterior), valorNuevo: String(nuevoRecuperado), changedBy: ctx.user.id },
+        { expedienteId: input.expedienteId, campo: "progresoFinanciero", valorAnterior: String(exp.progresoFinanciero ?? 0), valorNuevo: String(nuevoProgreso), changedBy: ctx.user.id },
+        ...(updateData.estado ? [{ expedienteId: input.expedienteId, campo: "estado", valorAnterior: exp.estado ?? "", valorNuevo: String(updateData.estado), changedBy: ctx.user.id }] : []),
+      ]).catch(() => {});
+
+      if (esCierre) {
+        runAutomation({
+          expedienteId: input.expedienteId,
+          trigger: "estado_changed",
+          triggerData: { nuevoEstado: "recuperado" },
+          executedBy: String(ctx.user.id),
+        }).catch(() => {});
+      }
+
+      const [updated] = await db.select().from(expedientes).where(eq(expedientes.id, input.expedienteId));
+      return { expediente: updated, nuevoRecuperado, nuevoProgreso, esCierre };
+    }),
+
   // ── Acreedores ────────────────────────────────────────────────────────────
 
   listAcreedores: staffProcedure
