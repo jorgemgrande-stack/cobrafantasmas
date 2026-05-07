@@ -27,7 +27,7 @@ const navItems = [
     roles: ["admin", "agente", "monitor"],
   },
   {
-    label: "CMS",
+    label: "CMS Web",
     href: "/admin/cms",
     icon: Image,
     roles: ["admin"],
@@ -40,42 +40,36 @@ const navItems = [
       { label: "Galería", href: "/admin/cms/galeria" },
     ],
   },
+  // MÓDULOS NAYADE — ocultos en Cobrafantasmas (no eliminar hasta Fase 10)
+  // Productos (experiencias, packs, lego) — no aplica
+  // {
+  //   label: "Productos",
+  //   href: "/admin/productos",
+  //   ...
+  // },
   {
-    label: "Productos",
-    href: "/admin/productos",
-    icon: Package,
-    roles: ["admin"],
-    children: [
-      { label: "Experiencias", href: "/admin/productos/experiencias" },
-      { label: "Categorías", href: "/admin/productos/categorias" },
-      { label: "Ubicaciones", href: "/admin/productos/ubicaciones" },
-      { label: "Variantes", href: "/admin/productos/variantes" },
-      { label: "Lego Packs", href: "/admin/productos/lego-packs" },
-    ],
-  },
-  {
-    label: "CRM",
+    label: "CRM Operativo",
     href: "/admin/crm",
     icon: FileText,
     roles: ["admin", "agente"],
     children: [
-      { label: "Leads", href: "/admin/crm?tab=leads", key: "crm-leads" },
-      { label: "Propuestas", href: "/admin/crm/propuestas", key: "crm-propuestas" },
+      { label: "Casos detectados", href: "/admin/crm?tab=leads", key: "crm-leads" },
+      { label: "Propuestas operativas", href: "/admin/crm/propuestas", key: "crm-propuestas" },
       { label: "Presupuestos", href: "/admin/crm?tab=quotes", key: "crm-presupuestos" },
-      { label: "Expedientes", href: "/admin/crm?tab=reservations", key: "crm-reservas" },
+      { label: "Reservas", href: "/admin/crm?tab=reservations", key: "crm-reservas" },
       { label: "Facturas", href: "/admin/crm?tab=invoices", key: "crm-facturas" },
-      { label: "Clientes", href: "/admin/crm/clientes", key: "crm-clientes" },
+      { label: "Acreedores", href: "/admin/crm/clientes", key: "crm-clientes" },
       { label: "Desestimientos", href: "/admin/crm?tab=anulaciones", key: "crm-anulaciones" },
     ],
   },
   {
-    label: "Atención Comercial",
+    label: "Canal Multicanal",
     href: "/admin/atencion-comercial",
     icon: Target,
     roles: ["admin", "agente"],
     children: [
-      { label: "Panel de seguimiento", href: "/admin/atencion-comercial?tab=dashboard", key: "ac-dashboard" },
-      { label: "Presupuestos abiertos", href: "/admin/atencion-comercial?tab=open", key: "ac-open" },
+      { label: "Seguimiento de envíos", href: "/admin/atencion-comercial?tab=dashboard", key: "ac-dashboard" },
+      { label: "Propuestas pendientes", href: "/admin/atencion-comercial?tab=open", key: "ac-open" },
       { label: "Reglas de recordatorio", href: "/admin/atencion-comercial?tab=rules", key: "ac-rules" },
       { label: "Historial", href: "/admin/atencion-comercial?tab=history", key: "ac-history" },
       { label: "Configuración", href: "/admin/atencion-comercial?tab=settings", key: "ac-settings" },
@@ -90,12 +84,13 @@ const navItems = [
     icon: Calendar,
     roles: ["admin", "agente", "monitor"],
     children: [
-      { label: "Calendario", href: "/admin/operaciones/calendario" },
-      { label: "Actividades del Día", href: "/admin/operaciones/actividades" },
-      { label: "Cazadores", href: "/admin/operaciones/monitores" },
-      { label: "Reseñas", href: "/admin/operaciones/resenas" },
       { label: "Expedientes Operativos", href: "/admin/operaciones/expedientes" },
-      { label: "Rankings", href: "/admin/operaciones/rankings" },
+      { label: "Rankings de Cazadores", href: "/admin/operaciones/rankings" },
+      { label: "Cazadores", href: "/admin/operaciones/monitores" },
+      // MÓDULOS NAYADE — ocultos (no eliminar hasta Fase 10)
+      // { label: "Calendario", href: "/admin/operaciones/calendario" },
+      // { label: "Actividades del Día", href: "/admin/operaciones/actividades" },
+      // { label: "Reseñas", href: "/admin/operaciones/resenas" },
     ],
   },
   {
@@ -138,28 +133,19 @@ const navItems = [
       { label: "Historial de cajas", href: "/admin/tpv/cajas" },
     ],
   },
-  {
-    label: "Proveedores",
-    href: "/admin/suppliers",
-    icon: Truck,
-    roles: ["admin"],
-    flagKey: "suppliers_module_enabled",
-    children: [
-      { label: "Gestión de proveedores", href: "/admin/suppliers" },
-      { label: "Liquidaciones", href: "/admin/settlements" },
-    ],
-  },
-  {
-    label: "Marketing",
-    href: "/admin/marketing",
-    icon: Tag,
-    roles: ["admin"],
-    children: [
-      { label: "Cupones & Ticketing", href: "/admin/marketing/cupones" },
-      { label: "Plataformas de cupones", href: "/admin/marketing/plataformas" },
-      { label: "Códigos de descuento", href: "/admin/marketing/descuentos" },
-    ],
-  },
+  // MÓDULOS NAYADE — ocultos en Cobrafantasmas (no eliminar hasta Fase 10)
+  // Proveedores y liquidaciones — no aplica a recobro
+  // {
+  //   label: "Proveedores",
+  //   href: "/admin/suppliers",
+  //   ...
+  // },
+  // Marketing (cupones, plataformas, descuentos) — no aplica
+  // {
+  //   label: "Marketing",
+  //   href: "/admin/marketing",
+  //   ...
+  // },
   {
     label: "Usuarios",
     href: "/admin/usuarios",

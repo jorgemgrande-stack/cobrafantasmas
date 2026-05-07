@@ -1,6 +1,6 @@
 -- Cobrafantasmas — Expedientes Operativos (Fase 1)
 
-CREATE TABLE `expedientes` (
+CREATE TABLE IF NOT EXISTS `expedientes` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `numeroExpediente` VARCHAR(32) NOT NULL UNIQUE,
   `estado` ENUM(
@@ -34,7 +34,7 @@ CREATE TABLE `expedientes` (
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE `acciones_operativas` (
+CREATE TABLE IF NOT EXISTS `acciones_operativas` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `expedienteId` INT NOT NULL,
   `tipo` ENUM(

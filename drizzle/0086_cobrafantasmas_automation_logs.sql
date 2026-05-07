@@ -1,6 +1,6 @@
 -- Cobrafantasmas — Automation Logs (Fase 5)
 
-CREATE TABLE `expediente_automation_logs` (
+CREATE TABLE IF NOT EXISTS `expediente_automation_logs` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `expedienteId` INT NOT NULL,
   `trigger` VARCHAR(64) NOT NULL,
