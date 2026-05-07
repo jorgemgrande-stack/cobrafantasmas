@@ -9,7 +9,9 @@ import {
   accionesOperativas,
   documentCounters,
   monitors,
+  expedienteAutomationLogs,
 } from "../../drizzle/schema";
+import { gte } from "drizzle-orm";
 
 const pool = mysql.createPool({ uri: process.env.DATABASE_URL!, connectionLimit: 3 });
 const db = drizzle(pool);
@@ -49,6 +51,172 @@ async function nextExpedienteNumber(): Promise<string> {
   }
 
   return `EXP-${String(nextNum).padStart(6, "0")}`;
+}
+
+// ─── Motor de automatizaciones auditables ─────────────────────────────────────
+
+const ESTADO_ACCION_AUTO: Record<string, { titulo: string; tipo: string; descripcion: string }> = {
+  estrategia_inicial:   { titulo: "Diseñar estrategia inicial",         tipo: "investigacion", descripcion: "Analizar el perfil del deudor y definir el enfoque operativo." },
+  operativo_activo:     { titulo: "Iniciar contacto con el deudor",     tipo: "llamada",       descripcion: "Primer contacto operativo. Registrar resultado." },
+  negociacion:          { titulo: "Preparar propuesta de negociación",  tipo: "negociacion",   descripcion: "Elaborar términos de acuerdo viables para ambas partes." },
+  acuerdo_parcial:      { titulo: "Documentar acuerdo parcial",         tipo: "acuerdo",       descripcion: "Registrar condiciones del acuerdo y calendario de pagos." },
+  recuperacion_parcial: { titulo: "Verificar pago parcial recibido",    tipo: "seguimiento",   descripcion: "Confirmar ingreso y actualizar importe recuperado." },
+  recuperado:           { titulo: "Cierre operativo — deuda recuperada",tipo: "hito",          descripcion: "Misión completada. Proceder con factura de éxito." },
+  escalada_juridica:    { titulo: "Preparar documentación jurídica",    tipo: "requerimiento", descripcion: "Recopilar evidencias y notificaciones para el proceso judicial." },
+  suspendido:           { titulo: "Registrar motivo de suspensión",     tipo: "nota",          descripcion: "Documentar la causa de la suspensión del expediente." },
+};
+
+async function runAutomation(params: {
+  expedienteId: number;
+  trigger: string;
+  triggerData: Record<string, unknown>;
+  executedBy: string;
+}): Promise<void> {
+  const { expedienteId, trigger, triggerData, executedBy } = params;
+
+  // Anti-duplicado: no ejecutar el mismo trigger sobre el mismo expediente en los últimos 10s
+  const since = new Date(Date.now() - 10_000);
+  const recent = await db
+    .select({ id: expedienteAutomationLogs.id })
+    .from(expedienteAutomationLogs)
+    .where(
+      and(
+        eq(expedienteAutomationLogs.expedienteId, expedienteId),
+        eq(expedienteAutomationLogs.trigger, trigger),
+        gte(expedienteAutomationLogs.createdAt, since),
+      )
+    )
+    .limit(1);
+
+  if (recent.length > 0) {
+    // Registrar skip sin crear nada
+    await db.insert(expedienteAutomationLogs).values({
+      expedienteId,
+      trigger,
+      triggerData: JSON.stringify(triggerData),
+      actionType: "skip_duplicate",
+      actionData: JSON.stringify({ reason: "duplicate within 10s" }),
+      executedBy,
+    });
+    return;
+  }
+
+  // ── Trigger: expediente_created ──────────────────────────────────────────
+  if (trigger === "expediente_created") {
+    const modoOperacion = triggerData.modoOperacion as string;
+    if (modoOperacion === "manual") {
+      await db.insert(expedienteAutomationLogs).values({
+        expedienteId, trigger,
+        triggerData: JSON.stringify(triggerData),
+        actionType: "skip_manual",
+        actionData: JSON.stringify({ reason: "modo manual, sin automatización" }),
+        executedBy,
+      });
+      return;
+    }
+    const [result] = await db.insert(accionesOperativas).values({
+      expedienteId,
+      tipo: "investigacion" as any,
+      titulo: "Analizar perfil del deudor",
+      descripcion: "Acción automática inicial. Investigar solvencia, localización y activos del deudor.",
+      prioridad: "alta" as any,
+      estado: "pendiente" as any,
+      visibleCliente: false,
+      notasInternas: "[AUTO] Creada automáticamente al abrir expediente.",
+    });
+    await db.insert(expedienteAutomationLogs).values({
+      expedienteId, trigger,
+      triggerData: JSON.stringify(triggerData),
+      actionType: "create_accion",
+      actionData: JSON.stringify({ accionId: (result as any).insertId, titulo: "Analizar perfil del deudor" }),
+      executedBy,
+    });
+    return;
+  }
+
+  // ── Trigger: estado_changed ──────────────────────────────────────────────
+  if (trigger === "estado_changed") {
+    const nuevoEstado = triggerData.nuevoEstado as string;
+    const autoAccion = ESTADO_ACCION_AUTO[nuevoEstado];
+
+    if (!autoAccion) {
+      await db.insert(expedienteAutomationLogs).values({
+        expedienteId, trigger,
+        triggerData: JSON.stringify(triggerData),
+        actionType: "skip_no_rule",
+        actionData: JSON.stringify({ reason: `sin regla para estado: ${nuevoEstado}` }),
+        executedBy,
+      });
+      return;
+    }
+
+    const [result] = await db.insert(accionesOperativas).values({
+      expedienteId,
+      tipo: autoAccion.tipo as any,
+      titulo: autoAccion.titulo,
+      descripcion: autoAccion.descripcion,
+      prioridad: (nuevoEstado === "escalada_juridica" ? "critica" : "alta") as any,
+      estado: "pendiente" as any,
+      visibleCliente: ["negociacion", "acuerdo_parcial", "recuperado"].includes(nuevoEstado),
+      notasInternas: `[AUTO] Generada por cambio de estado → ${nuevoEstado}`,
+    });
+    await db.insert(expedienteAutomationLogs).values({
+      expedienteId, trigger,
+      triggerData: JSON.stringify(triggerData),
+      actionType: "create_accion",
+      actionData: JSON.stringify({ accionId: (result as any).insertId, titulo: autoAccion.titulo, estado: nuevoEstado }),
+      executedBy,
+    });
+    return;
+  }
+
+  // ── Trigger: accion_completada ───────────────────────────────────────────
+  if (trigger === "accion_completada") {
+    const tipo = triggerData.tipo as string;
+
+    // Si se completa una negociación → crear hito
+    if (tipo === "negociacion") {
+      const [result] = await db.insert(accionesOperativas).values({
+        expedienteId,
+        tipo: "hito" as any,
+        titulo: "Negociación completada",
+        descripcion: "Hito automático: se ha completado una acción de negociación.",
+        prioridad: "alta" as any,
+        estado: "completada" as any,
+        visibleCliente: true,
+        notasInternas: "[AUTO] Hito generado al completar negociación.",
+      });
+      await db.insert(expedienteAutomationLogs).values({
+        expedienteId, trigger,
+        triggerData: JSON.stringify(triggerData),
+        actionType: "create_hito",
+        actionData: JSON.stringify({ accionId: (result as any).insertId, titulo: "Negociación completada" }),
+        executedBy,
+      });
+    }
+
+    // Si se completa un acuerdo → crear acción de seguimiento de pago
+    if (tipo === "acuerdo") {
+      const [result] = await db.insert(accionesOperativas).values({
+        expedienteId,
+        tipo: "seguimiento" as any,
+        titulo: "Seguimiento de pago acordado",
+        descripcion: "Verificar que el pago se realiza según lo pactado.",
+        prioridad: "alta" as any,
+        estado: "pendiente" as any,
+        visibleCliente: false,
+        notasInternas: "[AUTO] Generada al completar acuerdo.",
+      });
+      await db.insert(expedienteAutomationLogs).values({
+        expedienteId, trigger,
+        triggerData: JSON.stringify(triggerData),
+        actionType: "create_accion",
+        actionData: JSON.stringify({ accionId: (result as any).insertId, titulo: "Seguimiento de pago acordado" }),
+        executedBy,
+      });
+    }
+    return;
+  }
 }
 
 // ─── Zod schemas ─────────────────────────────────────────────────────────────
@@ -228,12 +396,21 @@ export const expedientesRouter = router({
         .select()
         .from(expedientes)
         .where(eq(expedientes.id, insertId));
+
+      // Automatización: expediente creado
+      runAutomation({
+        expedienteId: insertId,
+        trigger: "expediente_created",
+        triggerData: { modoOperacion: input.modoOperacion, numeroExpediente: created?.numeroExpediente },
+        executedBy: String(ctx.user.id),
+      }).catch(() => {}); // fire-and-forget, no bloquea la respuesta
+
       return created;
     }),
 
   update: staffProcedure
     .input(expedienteUpdateInput)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
       const updateData: Record<string, unknown> = {};
 
@@ -271,6 +448,17 @@ export const expedientesRouter = router({
         .select()
         .from(expedientes)
         .where(eq(expedientes.id, id));
+
+      // Automatización: cambio de estado
+      if (rest.estado !== undefined) {
+        runAutomation({
+          expedienteId: id,
+          trigger: "estado_changed",
+          triggerData: { nuevoEstado: rest.estado, numeroExpediente: updated?.numeroExpediente },
+          executedBy: String(ctx.user.id),
+        }).catch(() => {});
+      }
+
       return updated;
     }),
 
@@ -317,7 +505,7 @@ export const expedientesRouter = router({
 
   updateAccion: staffProcedure
     .input(accionUpdateInput)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
       const updateData: Record<string, unknown> = {};
 
@@ -346,6 +534,17 @@ export const expedientesRouter = router({
         .select()
         .from(accionesOperativas)
         .where(eq(accionesOperativas.id, id));
+
+      // Automatización: acción completada
+      if (rest.estado === "completada" && updated) {
+        runAutomation({
+          expedienteId: updated.expedienteId,
+          trigger: "accion_completada",
+          triggerData: { accionId: id, tipo: updated.tipo, titulo: updated.titulo },
+          executedBy: String(ctx.user.id),
+        }).catch(() => {});
+      }
+
       return updated;
     }),
 
@@ -434,6 +633,46 @@ export const expedientesRouter = router({
         createdAt:               exp.createdAt,
         acciones,
       };
+    }),
+
+  // ── Audit log de automatizaciones ────────────────────────────────────────
+
+  automationLogs: staffProcedure
+    .input(z.object({ expedienteId: z.number(), limit: z.number().default(50) }))
+    .query(async ({ input }) => {
+      return db
+        .select()
+        .from(expedienteAutomationLogs)
+        .where(eq(expedienteAutomationLogs.expedienteId, input.expedienteId))
+        .orderBy(desc(expedienteAutomationLogs.createdAt))
+        .limit(input.limit);
+    }),
+
+  revertAutomation: staffProcedure
+    .input(z.object({ logId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const [log] = await db
+        .select()
+        .from(expedienteAutomationLogs)
+        .where(eq(expedienteAutomationLogs.id, input.logId));
+
+      if (!log) throw new TRPCError({ code: "NOT_FOUND", message: "Log no encontrado" });
+      if (log.revertedAt) throw new TRPCError({ code: "BAD_REQUEST", message: "Ya fue revertido" });
+      if (log.actionType !== "create_accion" && log.actionType !== "create_hito") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Este tipo de acción no es reversible" });
+      }
+
+      const actionData = JSON.parse(log.actionData ?? "{}");
+      if (actionData.accionId) {
+        await db.delete(accionesOperativas).where(eq(accionesOperativas.id, actionData.accionId));
+      }
+
+      await db
+        .update(expedienteAutomationLogs)
+        .set({ revertedAt: new Date(), revertedBy: ctx.user.id })
+        .where(eq(expedienteAutomationLogs.id, input.logId));
+
+      return { success: true };
     }),
 
   // ── Agenda: acciones del día (para Actividades del Día) ───────────────────

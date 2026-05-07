@@ -581,11 +581,16 @@ function ExpedienteDetail({
   const [accionModal, setAccionModal] = useState<{ open: boolean; accion: any | null }>({ open: false, accion: null });
   const [deleteAccionId, setDeleteAccionId] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
-  const [tab, setTab] = useState<"registro" | "hitos">("registro");
+  const [tab, setTab] = useState<"registro" | "hitos" | "automatizaciones">("registro");
   const [linkCopied, setLinkCopied] = useState(false);
 
   const { data, isLoading, refetch } = trpc.expedientes.get.useQuery({ id: expedienteId });
   const deleteAccionMut = trpc.expedientes.deleteAccion.useMutation({ onSuccess: () => refetch() });
+  const { data: autoLogs = [], refetch: refetchLogs } = trpc.expedientes.automationLogs.useQuery(
+    { expedienteId },
+    { enabled: tab === "automatizaciones" }
+  );
+  const revertMut = trpc.expedientes.revertAutomation.useMutation({ onSuccess: () => { refetchLogs(); refetch(); } });
   const generateTokenMut = trpc.expedientes.generateLandingToken.useMutation({
     onSuccess: () => refetch(),
   });
@@ -716,10 +721,10 @@ function ExpedienteDetail({
             </div>
           )}
 
-          {/* Tabs registro / hitos */}
+          {/* Tabs registro / hitos / automatizaciones */}
           <div>
-            <div className="flex gap-1 mb-4 bg-white/[0.03] rounded-lg p-1 w-fit">
-              {(["registro", "hitos"] as const).map((t) => (
+            <div className="flex gap-1 mb-4 bg-white/[0.03] rounded-lg p-1 w-fit flex-wrap">
+              {(["registro", "hitos", "automatizaciones"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -727,7 +732,9 @@ function ExpedienteDetail({
                     tab === t ? "bg-white/10 text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {t === "registro" ? `Registro operativo (${registro.length})` : `Hitos (${hitos.length})`}
+                  {t === "registro" ? `Registro (${registro.length})`
+                    : t === "hitos" ? `Hitos (${hitos.length})`
+                    : "Automatizaciones"}
                 </button>
               ))}
             </div>
@@ -849,6 +856,90 @@ function ExpedienteDetail({
                   </div>
                 )}
               </>
+            )}
+
+            {tab === "automatizaciones" && (
+              <div className="space-y-3">
+                <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3 space-y-1.5">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Reglas activas</p>
+                  {[
+                    { trigger: "Expediente creado",  action: "Crear acción inicial de análisis" },
+                    { trigger: "Estado cambiado",    action: "Crear acción de seguimiento correspondiente" },
+                    { trigger: "Acción completada",  action: "Crear hito o acción de seguimiento" },
+                  ].map((r) => (
+                    <div key={r.trigger} className="flex items-center gap-2 text-xs">
+                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                      <span className="text-muted-foreground">{r.trigger}</span>
+                      <span className="text-white/20 mx-1">→</span>
+                      <span className="text-cyan-300/70">{r.action}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {(autoLogs as any[]).length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">Sin automatizaciones ejecutadas</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(autoLogs as any[]).map((log: any) => {
+                      const isReverted = !!log.revertedAt;
+                      const isRevertible = (log.actionType === "create_accion" || log.actionType === "create_hito") && !isReverted;
+                      const actionData = (() => { try { return JSON.parse(log.actionData ?? "{}"); } catch { return {}; } })();
+                      const ACTION_LABEL: Record<string, string> = {
+                        create_accion:    "Acción creada",
+                        create_hito:      "Hito creado",
+                        skip_duplicate:   "Omitida (duplicado)",
+                        skip_manual:      "Omitida (modo manual)",
+                        skip_no_rule:     "Omitida (sin regla)",
+                      };
+                      const TRIGGER_LABEL: Record<string, string> = {
+                        expediente_created: "Apertura de expediente",
+                        estado_changed:     "Cambio de estado",
+                        accion_completada:  "Acción completada",
+                      };
+                      return (
+                        <div key={log.id} className={`border rounded-xl p-3 text-xs transition-all ${
+                          isReverted
+                            ? "border-white/[0.04] opacity-40"
+                            : log.actionType.startsWith("skip")
+                            ? "border-white/[0.04] bg-white/[0.01]"
+                            : "border-cyan-500/20 bg-cyan-500/[0.03]"
+                        }`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                <span className={`font-medium ${log.actionType.startsWith("skip") ? "text-muted-foreground" : "text-cyan-300"}`}>
+                                  {ACTION_LABEL[log.actionType] ?? log.actionType}
+                                </span>
+                                {isReverted && <span className="text-[10px] text-red-400 bg-red-400/10 px-1.5 rounded-full">Revertido</span>}
+                              </div>
+                              <p className="text-muted-foreground">
+                                Trigger: {TRIGGER_LABEL[log.trigger] ?? log.trigger}
+                              </p>
+                              {actionData.titulo && (
+                                <p className="text-white/50 mt-0.5">"{actionData.titulo}"</p>
+                              )}
+                              <p className="text-white/20 mt-1">
+                                {new Date(log.createdAt).toLocaleString("es-ES")}
+                              </p>
+                            </div>
+                            {isRevertible && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 text-[10px] text-red-400 hover:text-red-300 shrink-0 px-2"
+                                onClick={() => revertMut.mutate({ logId: log.id })}
+                                disabled={revertMut.isPending}
+                              >
+                                Revertir
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 

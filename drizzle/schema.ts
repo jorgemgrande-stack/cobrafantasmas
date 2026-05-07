@@ -3065,3 +3065,21 @@ export const accionesOperativas = mysqlTable("acciones_operativas", {
 
 export type AccionOperativa = typeof accionesOperativas.$inferSelect;
 export type InsertAccionOperativa = typeof accionesOperativas.$inferInsert;
+
+// ─── EXPEDIENTE AUTOMATION LOGS ───────────────────────────────────────────────
+
+export const expedienteAutomationLogs = mysqlTable("expediente_automation_logs", {
+  id:           int("id").autoincrement().primaryKey(),
+  expedienteId: int("expedienteId").notNull(),
+  trigger:      varchar("trigger", { length: 64 }).notNull(),   // "expediente_created" | "estado_changed" | "accion_completada"
+  triggerData:  text("triggerData"),                            // JSON: contexto del trigger
+  actionType:   varchar("actionType", { length: 64 }).notNull(), // "create_accion" | "create_hito" | "skip_duplicate"
+  actionData:   text("actionData"),                             // JSON: qué se creó / saltó
+  executedBy:   varchar("executedBy", { length: 32 }).default("system").notNull(),
+  revertedAt:   timestamp("revertedAt"),
+  revertedBy:   int("revertedBy"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ExpedienteAutomationLog = typeof expedienteAutomationLogs.$inferSelect;
+export type InsertExpedienteAutomationLog = typeof expedienteAutomationLogs.$inferInsert;
