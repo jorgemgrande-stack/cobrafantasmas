@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
+import AdminLayout from "@/components/AdminLayout";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
@@ -42,17 +43,21 @@ export default function RankingsManager() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <AdminLayout title="Rankings Operativos">
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </AdminLayout>
     );
   }
 
   if (isError || !data) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
-        Error cargando rankings.
-      </div>
+      <AdminLayout title="Rankings Operativos">
+        <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
+          Error cargando rankings.
+        </div>
+      </AdminLayout>
     );
   }
 
@@ -60,6 +65,7 @@ export default function RankingsManager() {
   const totalEstados = Object.values(estadoBreakdown).reduce((a, b) => a + b, 0) || 1;
 
   return (
+    <AdminLayout title="Rankings Operativos">
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -212,6 +218,7 @@ export default function RankingsManager() {
         </div>
       </div>
     </div>
+    </AdminLayout>
   );
 }
 
