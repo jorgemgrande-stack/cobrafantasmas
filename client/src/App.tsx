@@ -99,6 +99,8 @@ const OnboardingWizard = lazy(() => import("./pages/admin/onboarding/OnboardingW
 // CRM
 const CRMDashboard = lazy(() => import("./pages/admin/crm/CRMDashboard"));
 const ClientsManager = lazy(() => import("./pages/admin/crm/ClientsManager"));
+const AcreedoresManager = lazy(() => import("./pages/admin/crm/AcreedoresManager"));
+const DeudoresManager = lazy(() => import("./pages/admin/crm/DeudoresManager"));
 const ProposalsPage = lazy(() => import("./pages/admin/crm/ProposalsPage"));
 const CommercialFollowupDashboard = lazy(() => import("./pages/admin/commercial/CommercialFollowupDashboard"));
 const WhatsAppGHLInbox = lazy(() => import("./pages/admin/commercial/WhatsAppGHLInbox"));
@@ -273,6 +275,8 @@ function Router() {
       <Route path="/admin/crm/presupuestos">{() => <Suspense fallback={<AdminLoadingFallback />}><CRMDashboard /></Suspense>}</Route>
       <Route path="/admin/crm/reservas">{() => <Suspense fallback={<AdminLoadingFallback />}><CRMDashboard /></Suspense>}</Route>
       <Route path="/admin/crm/clientes">{() => <Suspense fallback={<AdminLoadingFallback />}><ClientsManager /></Suspense>}</Route>
+      <Route path="/admin/crm/acreedores">{() => <Suspense fallback={<AdminLoadingFallback />}><AcreedoresManager /></Suspense>}</Route>
+      <Route path="/admin/crm/deudores">{() => <Suspense fallback={<AdminLoadingFallback />}><DeudoresManager /></Suspense>}</Route>
       <Route path="/admin/crm/propuestas">{() => <Suspense fallback={<AdminLoadingFallback />}><ProposalsPage /></Suspense>}</Route>
       <Route path="/admin/crm/anulaciones">{() => { window.location.replace("/admin/crm"); return null; }}</Route>
 
