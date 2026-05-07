@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, adminProcedure, staffProcedure } from "../_core/trpc";
+import { router, adminProcedure, staffProcedure, publicProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import mysql from "mysql2/promise";
 import { drizzle } from "drizzle-orm/mysql2";
@@ -367,6 +367,74 @@ export const expedientesRouter = router({
       .where(eq(monitors.isActive, true))
       .orderBy(asc(monitors.fullName));
   }),
+
+  // ── Landing token: generar enlace para el acreedor ───────────────────────
+
+  generateLandingToken: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const token = crypto.randomUUID().replace(/-/g, "");
+      await db
+        .update(expedientes)
+        .set({ landingToken: token })
+        .where(eq(expedientes.id, input.id));
+      return { token };
+    }),
+
+  // ── Landing pública: vista del acreedor (sin auth) ────────────────────────
+
+  publicLanding: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ input }) => {
+      const [exp] = await db
+        .select()
+        .from(expedientes)
+        .where(eq(expedientes.landingToken, input.token));
+
+      if (!exp) throw new TRPCError({ code: "NOT_FOUND", message: "Expediente no encontrado" });
+
+      // Solo acciones visibles para el cliente, sin notas internas ni cazador
+      const acciones = await db
+        .select({
+          id:              accionesOperativas.id,
+          tipo:            accionesOperativas.tipo,
+          titulo:          accionesOperativas.titulo,
+          descripcion:     accionesOperativas.descripcion,
+          estado:          accionesOperativas.estado,
+          fechaProgramada: accionesOperativas.fechaProgramada,
+          fechaCompletada: accionesOperativas.fechaCompletada,
+          createdAt:       accionesOperativas.createdAt,
+        })
+        .from(accionesOperativas)
+        .where(
+          and(
+            eq(accionesOperativas.expedienteId, exp.id),
+            eq(accionesOperativas.visibleCliente, true),
+          )
+        )
+        .orderBy(asc(accionesOperativas.createdAt));
+
+      // Datos seguros para el cliente — sin cazadorId, sin observacionesInternas, sin landingToken
+      return {
+        numeroExpediente:        exp.numeroExpediente,
+        estado:                  exp.estado,
+        deudorNombre:            exp.deudorNombre,
+        importeDeuda:            exp.importeDeuda,
+        importeRecuperado:       exp.importeRecuperado,
+        porcentajeExito:         exp.porcentajeExito,
+        probabilidadRecuperacion: exp.probabilidadRecuperacion,
+        progresoOperativo:       exp.progresoOperativo,
+        progresoFinanciero:      exp.progresoFinanciero,
+        progresoPsicologico:     exp.progresoPsicologico,
+        intensidadOperativa:     exp.intensidadOperativa,
+        modoOperacion:           exp.modoOperacion,
+        tipoDeuda:               exp.tipoDeuda,
+        fechaApertura:           exp.fechaApertura,
+        fechaCierre:             exp.fechaCierre,
+        createdAt:               exp.createdAt,
+        acciones,
+      };
+    }),
 
   // ── Agenda: acciones del día (para Actividades del Día) ───────────────────
 
