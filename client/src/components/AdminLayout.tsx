@@ -95,6 +95,7 @@ const navItems = [
       { label: "Cazadores", href: "/admin/operaciones/monitores" },
       { label: "Reseñas", href: "/admin/operaciones/resenas" },
       { label: "Expedientes Operativos", href: "/admin/operaciones/expedientes" },
+      { label: "Rankings", href: "/admin/operaciones/rankings" },
     ],
   },
   {

@@ -758,4 +758,119 @@ export const expedientesRouter = router({
       }
       return byDate;
     }),
+
+  // ── Rankings y estadísticas globales ──────────────────────────────────────
+
+  rankings: staffProcedure.query(async () => {
+    const allExps = await db
+      .select({
+        id:               expedientes.id,
+        cazadorId:        expedientes.cazadorId,
+        estado:           expedientes.estado,
+        importeDeuda:     expedientes.importeDeuda,
+        importeRecuperado:expedientes.importeRecuperado,
+        fechaApertura:    expedientes.fechaApertura,
+        fechaCierre:      expedientes.fechaCierre,
+        deudorNombre:     expedientes.deudorNombre,
+        numeroExpediente: expedientes.numeroExpediente,
+      })
+      .from(expedientes)
+      .orderBy(desc(expedientes.createdAt));
+
+    const allCazadores = await db
+      .select({ id: monitors.id, fullName: monitors.fullName })
+      .from(monitors)
+      .where(eq(monitors.isActive, true));
+
+    const ESTADOS_ACTIVOS = [
+      "pendiente_activacion", "estrategia_inicial", "operativo_activo",
+      "negociacion", "acuerdo_parcial", "recuperacion_parcial", "escalada_juridica",
+    ];
+
+    type CazadorStats = {
+      id: number; fullName: string;
+      total: number; activos: number; cerrados: number;
+      deudaTotal: number; recuperado: number;
+      velocidades: number[];
+    };
+
+    const cazadorMap: Record<number, CazadorStats> = {};
+    for (const c of allCazadores) {
+      cazadorMap[c.id] = { id: c.id, fullName: c.fullName, total: 0, activos: 0, cerrados: 0, deudaTotal: 0, recuperado: 0, velocidades: [] };
+    }
+    cazadorMap[0] = { id: 0, fullName: "Sin asignar", total: 0, activos: 0, cerrados: 0, deudaTotal: 0, recuperado: 0, velocidades: [] };
+
+    const estadoBreakdown: Record<string, number> = {};
+    for (const exp of allExps) {
+      const cid = exp.cazadorId ?? 0;
+      const c = cazadorMap[cid] ?? cazadorMap[0];
+      c.total++;
+      c.deudaTotal += parseFloat(exp.importeDeuda ?? "0");
+      c.recuperado += parseFloat(exp.importeRecuperado ?? "0");
+
+      if (exp.estado === "recuperado") {
+        c.cerrados++;
+        if (exp.fechaApertura && exp.fechaCierre) {
+          const days = Math.round(
+            (new Date(exp.fechaCierre).getTime() - new Date(exp.fechaApertura).getTime()) / 86400000
+          );
+          if (days >= 0) c.velocidades.push(days);
+        }
+      } else if (ESTADOS_ACTIVOS.includes(exp.estado ?? "")) {
+        c.activos++;
+      }
+
+      const est = exp.estado ?? "desconocido";
+      estadoBreakdown[est] = (estadoBreakdown[est] ?? 0) + 1;
+    }
+
+    const cazadorRanking = Object.values(cazadorMap)
+      .filter(c => c.total > 0)
+      .map(c => ({
+        id: c.id,
+        fullName: c.fullName,
+        total: c.total,
+        activos: c.activos,
+        cerrados: c.cerrados,
+        deudaTotal: Math.round(c.deudaTotal * 100) / 100,
+        recuperado: Math.round(c.recuperado * 100) / 100,
+        efectividad: c.deudaTotal > 0 ? Math.round((c.recuperado / c.deudaTotal) * 10000) / 100 : 0,
+        velocidadMedia: c.velocidades.length > 0
+          ? Math.round(c.velocidades.reduce((a, b) => a + b, 0) / c.velocidades.length)
+          : null,
+      }))
+      .sort((a, b) => b.recuperado - a.recuperado);
+
+    const totalDeuda     = allExps.reduce((s, e) => s + parseFloat(e.importeDeuda ?? "0"), 0);
+    const totalRecuperado = allExps.reduce((s, e) => s + parseFloat(e.importeRecuperado ?? "0"), 0);
+
+    const ultimasRecuperaciones = allExps
+      .filter(e => e.estado === "recuperado")
+      .sort((a, b) => (b.fechaCierre ?? b.fechaApertura ?? "").localeCompare(a.fechaCierre ?? a.fechaApertura ?? ""))
+      .slice(0, 5)
+      .map(e => ({
+        id:               e.id,
+        numeroExpediente: e.numeroExpediente,
+        deudorNombre:     e.deudorNombre,
+        importeRecuperado:e.importeRecuperado,
+        importeDeuda:     e.importeDeuda,
+        fechaCierre:      e.fechaCierre,
+        cazadorNombre:    cazadorMap[e.cazadorId ?? 0]?.fullName ?? "Sin asignar",
+      }));
+
+    return {
+      global: {
+        totalExpedientes:  allExps.length,
+        totalActivos:      allExps.filter(e => ESTADOS_ACTIVOS.includes(e.estado ?? "")).length,
+        totalCerrados:     allExps.filter(e => e.estado === "recuperado").length,
+        totalDeuda:        Math.round(totalDeuda * 100) / 100,
+        totalRecuperado:   Math.round(totalRecuperado * 100) / 100,
+        tasaExito:         totalDeuda > 0 ? Math.round((totalRecuperado / totalDeuda) * 10000) / 100 : 0,
+        cazadoresActivos:  allCazadores.length,
+      },
+      estadoBreakdown,
+      cazadorRanking,
+      ultimasRecuperaciones,
+    };
+  }),
 });
