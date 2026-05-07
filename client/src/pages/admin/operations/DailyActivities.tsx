@@ -6,6 +6,7 @@
  */
 import { useState } from "react";
 import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
 import {
@@ -152,6 +153,10 @@ export default function DailyActivities() {
   const dateStr = formatDate(currentDate);
 
   const { data, isLoading, refetch } = trpc.operations.activities.getForDate.useQuery(
+    { date: dateStr },
+    { refetchOnWindowFocus: false }
+  );
+  const { data: accionesExp = [] } = trpc.expedientes.accionesForDate.useQuery(
     { date: dateStr },
     { refetchOnWindowFocus: false }
   );
@@ -539,6 +544,68 @@ export default function DailyActivities() {
           </div>
         )}
       </div>
+
+      {/* ── Acciones Operativas de Expedientes ───────────────────────────── */}
+      {(accionesExp as any[]).length > 0 && (
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-5 rounded-full bg-cyan-500" />
+            <h2 className="text-sm font-bold text-white uppercase tracking-widest">
+              Acciones operativas — {(accionesExp as any[]).length} programada{(accionesExp as any[]).length !== 1 ? "s" : ""}
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {(accionesExp as any[]).map((accion: any) => {
+              const TIPO_ICON: Record<string, string> = {
+                llamada: "📞", whatsapp: "💬", email: "📧", visita: "🚶",
+                negociacion: "🤝", acuerdo: "✅", seguimiento: "👁", investigacion: "🔍",
+                requerimiento: "📋", accion_sorpresa: "⚡", escalada: "⬆", hito: "🏁", nota: "📝",
+              };
+              const ESTADO_COLOR: Record<string, string> = {
+                pendiente: "text-yellow-400 bg-yellow-400/10",
+                en_progreso: "text-blue-400 bg-blue-400/10",
+                completada: "text-green-400 bg-green-400/10",
+                cancelada: "text-red-400 bg-red-400/10",
+              };
+              const PRIORIDAD_COLOR: Record<string, string> = {
+                baja: "border-l-slate-500", media: "border-l-blue-500",
+                alta: "border-l-orange-500", critica: "border-l-red-500",
+              };
+              const hora = accion.fechaProgramada
+                ? new Date(accion.fechaProgramada).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+                : null;
+              return (
+                <Link key={accion.id} href={`/admin/operaciones/expedientes`}>
+                  <div className={`bg-[#0d1117] border border-white/[0.06] border-l-2 ${PRIORIDAD_COLOR[accion.prioridad] ?? "border-l-slate-600"} rounded-xl px-4 py-3 cursor-pointer hover:bg-white/[0.03] transition-colors`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <span className="text-lg shrink-0">{TIPO_ICON[accion.tipo] ?? "•"}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">{accion.titulo}</p>
+                          <p className="text-xs text-cyan-400 mt-0.5 truncate">
+                            {accion.numeroExpediente} — {accion.deudorNombre}
+                          </p>
+                          {accion.descripcion && (
+                            <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{accion.descripcion}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        {hora && (
+                          <span className="text-xs text-slate-300 font-mono">{hora}</span>
+                        )}
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ESTADO_COLOR[accion.estado] ?? ""}`}>
+                          {accion.estado?.replace("_", " ")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Modal de edición operativa (reserva general o actividad específica) */}
       <Dialog open={!!editTarget} onOpenChange={() => setEditTarget(null)}>

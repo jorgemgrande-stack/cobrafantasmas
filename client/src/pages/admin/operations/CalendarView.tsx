@@ -302,10 +302,11 @@ function ReservationModal({
 
 // ─── Modal de resumen de día (al hacer click en la celda) ─────────────────────
 function DayDetailModal({
-  date, events, onClose, onGoToActivities, onSelectReservation,
+  date, events, expAcciones, onClose, onGoToActivities, onSelectReservation,
 }: {
   date: Date;
   events: any[];
+  expAcciones: any[];
   onClose: () => void;
   onGoToActivities: (dateStr: string) => void;
   onSelectReservation: (ev: any) => void;
@@ -418,9 +419,47 @@ function DayDetailModal({
             </div>
           )}
 
-          {events.length === 0 && (
-            <p className="text-center text-slate-500 py-6">No hay reservas confirmadas este día</p>
+          {/* Acciones operativas de expedientes */}
+          {expAcciones.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block" />
+                Operativa expedientes ({expAcciones.length})
+              </h4>
+              <div className="space-y-1.5">
+                {expAcciones.map((a: any, i: number) => {
+                  const TIPO_ICON: Record<string, string> = {
+                    llamada: "📞", whatsapp: "💬", email: "📧", visita: "🚶",
+                    negociacion: "🤝", acuerdo: "✅", seguimiento: "👁",
+                    investigacion: "🔍", requerimiento: "📋", accion_sorpresa: "⚡",
+                    escalada: "⬆", hito: "🏁", nota: "📝",
+                  };
+                  const hora = a.fechaProgramada
+                    ? new Date(a.fechaProgramada).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+                    : null;
+                  return (
+                    <div key={i} className="bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span>{TIPO_ICON[a.tipo] ?? "•"}</span>
+                          <div className="min-w-0">
+                            <p className="text-sm text-white font-medium truncate">{a.titulo}</p>
+                            <p className="text-xs text-cyan-300/70 truncate">{a.numeroExpediente} — {a.deudorNombre}</p>
+                          </div>
+                        </div>
+                        {hora && <span className="text-xs text-slate-400 font-mono shrink-0">{hora}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
+
+          {events.length === 0 && expAcciones.length === 0 && (
+            <p className="text-center text-slate-500 py-6">No hay actividad registrada este día</p>
+          )}
+          {events.length === 0 && expAcciones.length > 0 && null}
 
           <div className="flex gap-2 justify-end pt-2 border-t border-slate-700">
             <Button variant="outline" size="sm" onClick={onClose} className="border-slate-600 text-slate-300">
@@ -454,6 +493,11 @@ export default function CalendarView() {
 
   const { data, isLoading, refetch } = trpc.operations.calendar.getEvents.useQuery(
     { from: fromDate + "T00:00:00", to: toDate + "T23:59:59" },
+    { refetchOnWindowFocus: false }
+  );
+
+  const { data: expAcciones = {} } = trpc.expedientes.accionesForRange.useQuery(
+    { from: fromDate, to: toDate },
     { refetchOnWindowFocus: false }
   );
 
@@ -571,11 +615,12 @@ export default function CalendarView() {
                 const acts = dayEvents.filter(e => e.eventType === "activity");
                 const hasAlert = acts.some(e => !e.monitorId || e.opStatus === "incidencia");
                 const isLastRow = idx >= grid.length - 7;
+                const expDayAcciones = (expAcciones as Record<string, any[]>)[key] || [];
 
                 return (
                   <div
                     key={key}
-                    onClick={() => dayEvents.length > 0 && setSelectedDay(day)}
+                    onClick={() => (dayEvents.length > 0 || expDayAcciones.length > 0) && setSelectedDay(day)}
                     className={`
                       min-h-[110px] p-1.5 border-b border-r border-slate-800
                       ${dayEvents.length > 0 ? "cursor-pointer hover:bg-slate-800/40 transition-colors" : ""}
@@ -607,6 +652,15 @@ export default function CalendarView() {
                         </button>
                       )}
                     </div>
+                    {/* Dots de acciones operativas de expedientes */}
+                    {expDayAcciones.length > 0 && (
+                      <div className="flex items-center gap-1 mt-1 px-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                        <span className="text-[9px] text-cyan-400 truncate">
+                          {expDayAcciones.length} op.
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -620,6 +674,7 @@ export default function CalendarView() {
         <DayDetailModal
           date={selectedDay}
           events={selectedDayEvents}
+          expAcciones={(expAcciones as Record<string, any[]>)[formatDate(selectedDay)] || []}
           onClose={() => setSelectedDay(null)}
           onGoToActivities={goToActivities}
           onSelectReservation={(ev) => { setSelectedReservation(ev); setSelectedDay(null); }}

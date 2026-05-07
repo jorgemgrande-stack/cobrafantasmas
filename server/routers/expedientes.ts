@@ -367,4 +367,88 @@ export const expedientesRouter = router({
       .where(eq(monitors.isActive, true))
       .orderBy(asc(monitors.fullName));
   }),
+
+  // ── Agenda: acciones del día (para Actividades del Día) ───────────────────
+
+  accionesForDate: staffProcedure
+    .input(z.object({ date: z.string() })) // YYYY-MM-DD
+    .query(async ({ input }) => {
+      const dateStart = new Date(input.date + "T00:00:00");
+      const dateEnd   = new Date(input.date + "T23:59:59");
+
+      const rows = await db
+        .select({
+          id:              accionesOperativas.id,
+          tipo:            accionesOperativas.tipo,
+          titulo:          accionesOperativas.titulo,
+          descripcion:     accionesOperativas.descripcion,
+          prioridad:       accionesOperativas.prioridad,
+          estado:          accionesOperativas.estado,
+          fechaProgramada: accionesOperativas.fechaProgramada,
+          visibleCliente:  accionesOperativas.visibleCliente,
+          notasInternas:   accionesOperativas.notasInternas,
+          expedienteId:    expedientes.id,
+          numeroExpediente: expedientes.numeroExpediente,
+          deudorNombre:    expedientes.deudorNombre,
+          estadoExpediente: expedientes.estado,
+          cazadorId:       accionesOperativas.cazadorId,
+        })
+        .from(accionesOperativas)
+        .innerJoin(expedientes, eq(accionesOperativas.expedienteId, expedientes.id))
+        .where(
+          and(
+            // @ts-ignore — drizzle timestamp comparison
+            accionesOperativas.fechaProgramada >= dateStart,
+            // @ts-ignore
+            accionesOperativas.fechaProgramada <= dateEnd,
+          )
+        )
+        .orderBy(asc(accionesOperativas.fechaProgramada));
+
+      return rows;
+    }),
+
+  // ── Agenda: acciones por rango (para Calendario) ─────────────────────────
+
+  accionesForRange: staffProcedure
+    .input(z.object({ from: z.string(), to: z.string() })) // YYYY-MM-DD
+    .query(async ({ input }) => {
+      const dateStart = new Date(input.from + "T00:00:00");
+      const dateEnd   = new Date(input.to   + "T23:59:59");
+
+      const rows = await db
+        .select({
+          id:              accionesOperativas.id,
+          tipo:            accionesOperativas.tipo,
+          titulo:          accionesOperativas.titulo,
+          fechaProgramada: accionesOperativas.fechaProgramada,
+          estado:          accionesOperativas.estado,
+          prioridad:       accionesOperativas.prioridad,
+          expedienteId:    expedientes.id,
+          numeroExpediente: expedientes.numeroExpediente,
+          deudorNombre:    expedientes.deudorNombre,
+          estadoExpediente: expedientes.estado,
+        })
+        .from(accionesOperativas)
+        .innerJoin(expedientes, eq(accionesOperativas.expedienteId, expedientes.id))
+        .where(
+          and(
+            // @ts-ignore
+            accionesOperativas.fechaProgramada >= dateStart,
+            // @ts-ignore
+            accionesOperativas.fechaProgramada <= dateEnd,
+          )
+        )
+        .orderBy(asc(accionesOperativas.fechaProgramada));
+
+      // Agrupar por fecha YYYY-MM-DD para consumo del calendario
+      const byDate: Record<string, typeof rows> = {};
+      for (const row of rows) {
+        if (!row.fechaProgramada) continue;
+        const key = new Date(row.fechaProgramada).toISOString().slice(0, 10);
+        if (!byDate[key]) byDate[key] = [];
+        byDate[key].push(row);
+      }
+      return byDate;
+    }),
 });
