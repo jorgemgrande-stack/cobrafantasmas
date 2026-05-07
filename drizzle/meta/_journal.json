@@ -638,6 +638,13 @@
       "when": 1746643200000,
       "tag": "0089_fase1_core",
       "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "5",
+      "when": 1746730000000,
+      "tag": "0090_fase8_protocolos",
+      "breakpoints": true
     }
   ]
 }

@@ -3056,6 +3056,47 @@ export const expedienteAuditLog = mysqlTable("expediente_audit_log", {
 
 export type ExpedienteAuditLogEntry = typeof expedienteAuditLog.$inferSelect;
 
+// ─── MOTOR DE PROTOCOLOS ──────────────────────────────────────────────────────
+
+export type ProtocoloTipo = "persistente" | "radar" | "reactivacion" | "intensivo" | "presencial";
+
+export type ProtocoloPaso = {
+  titulo:          string;
+  tipo:            string;
+  diasDesdeInicio: number;
+  descripcion?:    string;
+  prioridad?:      "baja" | "media" | "alta" | "critica";
+};
+
+export const protocolos = mysqlTable("protocolos", {
+  id:                    int("id").autoincrement().primaryKey(),
+  nombre:                varchar("nombre", { length: 256 }).notNull(),
+  tipo:                  mysqlEnum("tipo", ["persistente","radar","reactivacion","intensivo","presencial"]).notNull(),
+  descripcion:           text("descripcion"),
+  pasos:                 json("pasos").$type<ProtocoloPaso[]>().notNull(),
+  intensidadRecomendada: int("intensidadRecomendada").default(2).notNull(),
+  duracionDias:          int("duracionDias").default(30).notNull(),
+  activo:                boolean("activo").default(true).notNull(),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const expedienteProtocolos = mysqlTable("expediente_protocolos", {
+  id:           int("id").autoincrement().primaryKey(),
+  expedienteId: int("expedienteId").notNull(),
+  protocoloId:  int("protocoloId").notNull(),
+  estado:       mysqlEnum("estado", ["activo","completado","cancelado"]).default("activo").notNull(),
+  pasoActual:   int("pasoActual").default(0).notNull(),
+  notas:        text("notas"),
+  asignadoPor:  int("asignadoPor"),
+  iniciadoAt:   timestamp("iniciadoAt").defaultNow().notNull(),
+  completadoAt: timestamp("completadoAt"),
+});
+
+export type Protocolo          = typeof protocolos.$inferSelect;
+export type InsertProtocolo    = typeof protocolos.$inferInsert;
+export type ExpedienteProtocolo = typeof expedienteProtocolos.$inferSelect;
+
 export const expedienteDocumentos = mysqlTable("expediente_documentos", {
   id:           int("id").autoincrement().primaryKey(),
   expedienteId: int("expedienteId").notNull(),

@@ -87,6 +87,7 @@ const navItems = [
     children: [
       { label: "Centro de Control", href: "/admin/operaciones/control-centro" },
       { label: "Expedientes Operativos", href: "/admin/operaciones/expedientes" },
+      { label: "Protocolos", href: "/admin/operaciones/protocolos" },
       { label: "Rankings de Cazadores", href: "/admin/operaciones/rankings" },
       { label: "Cazadores", href: "/admin/operaciones/monitores" },
       // MÓDULOS NAYADE — ocultos (no eliminar hasta Fase 10)

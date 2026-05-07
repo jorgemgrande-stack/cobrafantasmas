@@ -69,6 +69,7 @@ const MonitorsManager = lazy(() => import("./pages/admin/operations/MonitorsMana
 const ExpedientesManager = lazy(() => import("./pages/admin/operaciones/ExpedientesManager"));
 const RankingsManager = lazy(() => import("./pages/admin/operaciones/RankingsManager"));
 const ControlCentro = lazy(() => import("./pages/admin/operaciones/ControlCentro"));
+const ProtocolosManager = lazy(() => import("./pages/admin/operaciones/ProtocolosManager"));
 
 // Accounting
 const AccountingDashboard = lazy(() => import("./pages/admin/accounting/AccountingDashboard"));
@@ -225,6 +226,7 @@ function Router() {
       <Route path="/admin/operaciones/control-centro">{() => <Suspense fallback={<AdminLoadingFallback />}><ControlCentro /></Suspense>}</Route>
       <Route path="/admin/operaciones/expedientes">{() => <Suspense fallback={<AdminLoadingFallback />}><ExpedientesManager /></Suspense>}</Route>
       <Route path="/admin/operaciones/rankings">{() => <Suspense fallback={<AdminLoadingFallback />}><RankingsManager /></Suspense>}</Route>
+      <Route path="/admin/operaciones/protocolos">{() => <Suspense fallback={<AdminLoadingFallback />}><ProtocolosManager /></Suspense>}</Route>
       <Route path="/admin/operaciones/reservas-redsys">{() => { window.location.replace("/admin/crm?tab=reservations"); return null; }}</Route>
 
       {/* Accounting */}

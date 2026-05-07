@@ -618,6 +618,135 @@ function AccionModal({
   );
 }
 
+// ─── Protocolo Section ───────────────────────────────────────────────────────
+
+const PROTOCOLO_TIPO_META: Record<string, { label: string; color: string; icon: string }> = {
+  persistente:  { label: "Persistente",  color: "text-blue-400   border-blue-500/30   bg-blue-500/10",   icon: "🔁" },
+  radar:        { label: "Radar",        color: "text-cyan-400   border-cyan-500/30   bg-cyan-500/10",   icon: "📡" },
+  reactivacion: { label: "Reactivación", color: "text-yellow-400 border-yellow-500/30 bg-yellow-500/10", icon: "⚡" },
+  intensivo:    { label: "Intensivo",    color: "text-orange-400 border-orange-500/30 bg-orange-500/10", icon: "🔥" },
+  presencial:   { label: "Presencial",   color: "text-red-400    border-red-500/30    bg-red-500/10",    icon: "🚶" },
+};
+
+function ProtocoloSection({
+  protocolos: asignaciones, listaProtocolos, asignarMut, cancelarMut, expedienteId,
+}: {
+  protocolos:       any[];
+  listaProtocolos:  any[];
+  asignarMut:       { mutate: (i: any) => void; isPending: boolean };
+  cancelarMut:      { mutate: (i: any) => void; isPending: boolean };
+  expedienteId:     number;
+}) {
+  const [selectOpen, setSelectOpen] = useState(false);
+  const [selProtocolo, setSelProtocolo] = useState("");
+
+  const activo = asignaciones.find((a: any) => a.estado === "activo");
+  const historial = asignaciones.filter((a: any) => a.estado !== "activo");
+
+  function handleAsignar() {
+    if (!selProtocolo) return;
+    asignarMut.mutate({ expedienteId, protocoloId: parseInt(selProtocolo) });
+    setSelectOpen(false);
+    setSelProtocolo("");
+  }
+
+  return (
+    <div className="border border-white/[0.06] rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Protocolo operativo</p>
+        {!activo && (
+          <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+            onClick={() => setSelectOpen((o) => !o)}>
+            <Zap className="w-3 h-3" /> Asignar
+          </Button>
+        )}
+      </div>
+
+      {/* Selector de protocolo */}
+      {selectOpen && !activo && (
+        <div className="flex gap-2">
+          <Select value={selProtocolo} onValueChange={setSelProtocolo}>
+            <SelectTrigger className="flex-1 h-8 text-xs"><SelectValue placeholder="Seleccionar protocolo..." /></SelectTrigger>
+            <SelectContent>
+              {listaProtocolos.filter((p: any) => p.activo).map((p: any) => {
+                const m = PROTOCOLO_TIPO_META[p.tipo] ?? PROTOCOLO_TIPO_META.persistente;
+                return (
+                  <SelectItem key={p.id} value={String(p.id)}>
+                    {m.icon} {p.nombre}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          <Button size="sm" className="h-8 text-xs px-3" onClick={handleAsignar}
+            disabled={!selProtocolo || asignarMut.isPending}>
+            {asignarMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Activar"}
+          </Button>
+          <Button size="sm" variant="ghost" className="h-8 text-xs px-2" onClick={() => setSelectOpen(false)}>
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
+
+      {/* Protocolo activo */}
+      {activo ? (
+        <div className={`rounded-xl border p-4 ${PROTOCOLO_TIPO_META[activo.protocolo.tipo]?.color ?? ""}`}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{PROTOCOLO_TIPO_META[activo.protocolo.tipo]?.icon ?? "📋"}</span>
+              <div>
+                <p className="text-sm font-bold">{activo.protocolo.nombre}</p>
+                <p className="text-xs text-muted-foreground">
+                  Iniciado {new Date(activo.iniciadoAt).toLocaleDateString("es-ES")} ·{" "}
+                  {(activo.protocolo.pasos as any[]).length} pasos · {activo.protocolo.duracionDias}d
+                </p>
+              </div>
+            </div>
+            <Button size="sm" variant="ghost" className="h-6 text-[10px] text-red-400 hover:text-red-300 shrink-0 px-2"
+              onClick={() => cancelarMut.mutate({ asignacionId: activo.id })}
+              disabled={cancelarMut.isPending}>
+              Cancelar
+            </Button>
+          </div>
+          {/* Mini progreso de pasos */}
+          <div className="mt-3">
+            <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+              <span>Pasos creados como acciones planificadas</span>
+              <span>{(activo.protocolo.pasos as any[]).length} acciones</span>
+            </div>
+            <div className="flex gap-0.5">
+              {(activo.protocolo.pasos as any[]).map((_: any, i: number) => (
+                <div key={i}
+                  className={`flex-1 h-1.5 rounded-full ${i < activo.pasoActual ? "bg-current opacity-80" : "bg-white/10"}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">Sin protocolo activo. Asigna uno para generar un plan de acción automático.</p>
+      )}
+
+      {/* Historial */}
+      {historial.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Historial</p>
+          {historial.map((h: any) => {
+            const m = PROTOCOLO_TIPO_META[h.protocolo.tipo] ?? PROTOCOLO_TIPO_META.persistente;
+            return (
+              <div key={h.id} className="flex items-center gap-2 text-xs text-muted-foreground/60">
+                <span>{m.icon}</span>
+                <span>{h.protocolo.nombre}</span>
+                <span className="capitalize">— {h.estado}</span>
+                <span className="ml-auto">{new Date(h.iniciadoAt).toLocaleDateString("es-ES")}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Documentos Tab ──────────────────────────────────────────────────────────
 
 const TIPO_DOC_META: Record<string, { label: string; color: string; icon: string }> = {
@@ -1014,6 +1143,16 @@ function ExpedienteDetail({
     { expedienteId },
     { enabled: tab === "inteligencia" }
   );
+  const { data: protocoloActivo, refetch: refetchProtocolo } =
+    trpc.protocolos.listExpedienteProtocolos.useQuery({ expedienteId });
+  const { data: listaProtocolos = [] } = trpc.protocolos.list.useQuery();
+  const asignarProtMut = trpc.protocolos.asignar.useMutation({
+    onSuccess: () => { refetchProtocolo(); refetch(); },
+  });
+  const cancelarProtMut = trpc.protocolos.cancelarProtocolo.useMutation({
+    onSuccess: () => refetchProtocolo(),
+  });
+
   const { data: documentos = [], isLoading: loadingDocs, refetch: refetchDocs } =
     trpc.expedientes.listDocumentos.useQuery(
       { expedienteId },
@@ -1498,6 +1637,15 @@ function ExpedienteDetail({
               />
             )}
           </div>
+
+          {/* Protocolo activo */}
+          <ProtocoloSection
+            protocolos={protocoloActivo as any[] ?? []}
+            listaProtocolos={listaProtocolos as any[]}
+            asignarMut={asignarProtMut}
+            cancelarMut={cancelarProtMut}
+            expedienteId={expedienteId}
+          />
 
           {/* Enlace de seguimiento para el acreedor */}
           <div className="border border-white/[0.06] rounded-xl p-4 space-y-3">
