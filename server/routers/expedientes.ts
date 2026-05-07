@@ -3,7 +3,7 @@ import { router, adminProcedure, staffProcedure, publicProcedure } from "../_cor
 import { TRPCError } from "@trpc/server";
 import mysql from "mysql2/promise";
 import { drizzle } from "drizzle-orm/mysql2";
-import { eq, and, desc, asc, like, or } from "drizzle-orm";
+import { eq, and, desc, asc, like, or, sql } from "drizzle-orm";
 import {
   expedientes,
   accionesOperativas,
@@ -15,6 +15,7 @@ import {
   deudorContactos,
   expedienteAuditLog,
   expedienteDocumentos,
+  users,
 } from "../../drizzle/schema";
 import { gte } from "drizzle-orm";
 
@@ -1229,15 +1230,65 @@ export const expedientesRouter = router({
   // ── Audit log de cambios ──────────────────────────────────────────────────
 
   auditLog: staffProcedure
-    .input(z.object({ expedienteId: z.number(), limit: z.number().default(50) }))
+    .input(z.object({ expedienteId: z.number(), limit: z.number().default(100) }))
     .query(async ({ input }) => {
       return db
-        .select()
+        .select({
+          id:            expedienteAuditLog.id,
+          expedienteId:  expedienteAuditLog.expedienteId,
+          campo:         expedienteAuditLog.campo,
+          valorAnterior: expedienteAuditLog.valorAnterior,
+          valorNuevo:    expedienteAuditLog.valorNuevo,
+          changedBy:     expedienteAuditLog.changedBy,
+          changedAt:     expedienteAuditLog.changedAt,
+          userName:      users.name,
+        })
         .from(expedienteAuditLog)
+        .leftJoin(users, eq(users.id, expedienteAuditLog.changedBy))
         .where(eq(expedienteAuditLog.expedienteId, input.expedienteId))
         .orderBy(desc(expedienteAuditLog.changedAt))
         .limit(input.limit);
     }),
+
+  auditLogGlobal: adminProcedure
+    .input(z.object({
+      limit:  z.number().default(200),
+      campo:  z.string().optional(),
+      userId: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      const conditions = [];
+      if (input.campo)  conditions.push(eq(expedienteAuditLog.campo,     input.campo));
+      if (input.userId) conditions.push(eq(expedienteAuditLog.changedBy,  input.userId));
+
+      return db
+        .select({
+          id:               expedienteAuditLog.id,
+          expedienteId:     expedienteAuditLog.expedienteId,
+          campo:            expedienteAuditLog.campo,
+          valorAnterior:    expedienteAuditLog.valorAnterior,
+          valorNuevo:       expedienteAuditLog.valorNuevo,
+          changedBy:        expedienteAuditLog.changedBy,
+          changedAt:        expedienteAuditLog.changedAt,
+          userName:         users.name,
+          numeroExpediente: expedientes.numeroExpediente,
+          deudorNombre:     expedientes.deudorNombre,
+        })
+        .from(expedienteAuditLog)
+        .leftJoin(users,       eq(users.id,        expedienteAuditLog.changedBy))
+        .leftJoin(expedientes, eq(expedientes.id,   expedienteAuditLog.expedienteId))
+        .where(conditions.length ? and(...conditions) : undefined)
+        .orderBy(desc(expedienteAuditLog.changedAt))
+        .limit(input.limit);
+    }),
+
+  auditLogUsuarios: adminProcedure.query(async () => {
+    return db
+      .selectDistinct({ id: users.id, name: users.name })
+      .from(expedienteAuditLog)
+      .leftJoin(users, eq(users.id, expedienteAuditLog.changedBy))
+      .where(sql`${expedienteAuditLog.changedBy} IS NOT NULL`);
+  }),
 
   // ── Rankings y estadísticas globales ──────────────────────────────────────
 

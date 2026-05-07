@@ -618,6 +618,104 @@ function AccionModal({
   );
 }
 
+// ─── Audit Tab ───────────────────────────────────────────────────────────────
+
+const CAMPO_LABEL: Record<string, string> = {
+  estado:            "Estado",
+  importeRecuperado: "Importe recuperado",
+  cazadorId:         "Cazador asignado",
+  acreedorId:        "Acreedor",
+  deudorId:          "Deudor vinculado",
+  modoOperacion:     "Modo operación",
+  cobro_registrado:  "Cobro registrado",
+  intensidadOperativa: "Intensidad operativa",
+  progresoOperativo: "Progreso operativo",
+  progresoFinanciero: "Progreso financiero",
+  progresoPsicologico: "Presión psicológica",
+};
+
+const ESTADO_LABEL: Record<string, string> = {
+  pendiente_activacion: "Pendiente",
+  estrategia_inicial:   "Estrategia inicial",
+  operativo_activo:     "Operativo activo",
+  negociacion:          "Negociación",
+  acuerdo_parcial:      "Acuerdo parcial",
+  recuperacion_parcial: "Recuperación parcial",
+  recuperado:           "Recuperado",
+  incobrable:           "Incobrable",
+  suspendido:           "Suspendido",
+  escalada_juridica:    "Escalada jurídica",
+  finalizado:           "Finalizado",
+};
+
+function formatAuditValue(campo: string, valor: string | null | undefined): string {
+  if (valor === null || valor === undefined || valor === "") return "—";
+  if (campo === "estado") return ESTADO_LABEL[valor] ?? valor;
+  if (campo === "importeRecuperado" || campo === "cobro_registrado") {
+    const n = parseFloat(valor);
+    if (!isNaN(n)) return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
+  }
+  if (campo === "modoOperacion") return { manual: "Manual", "semi-automatico": "Semi-automático", automatico: "Automático" }[valor] ?? valor;
+  return valor;
+}
+
+function AuditTab({ entries, loading }: { entries: any[]; loading: boolean }) {
+  if (loading) return (
+    <div className="flex items-center justify-center py-10">
+      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+    </div>
+  );
+  if (entries.length === 0) return (
+    <div className="text-center py-12 text-muted-foreground">
+      <div className="text-3xl mb-2">🔍</div>
+      <p className="text-sm">Sin cambios registrados todavía</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-1.5">
+      {entries.map((entry: any) => {
+        const campoLabel = CAMPO_LABEL[entry.campo] ?? entry.campo;
+        const isCobro = entry.campo === "cobro_registrado";
+        return (
+          <div key={entry.id}
+            className={`rounded-xl border px-3 py-2.5 text-xs ${
+              isCobro
+                ? "border-green-500/20 bg-green-500/[0.04]"
+                : "border-white/[0.05] bg-white/[0.02]"
+            }`}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <span className="font-semibold text-foreground">{campoLabel}</span>
+                {!isCobro && (
+                  <span className="text-muted-foreground ml-1.5">
+                    {formatAuditValue(entry.campo, entry.valorAnterior)}
+                    <span className="mx-1.5 text-white/20">→</span>
+                    <span className="text-foreground font-medium">{formatAuditValue(entry.campo, entry.valorNuevo)}</span>
+                  </span>
+                )}
+                {isCobro && (
+                  <span className="text-green-400 font-bold ml-1.5">
+                    +{formatAuditValue(entry.campo, entry.valorNuevo)}
+                  </span>
+                )}
+              </div>
+              <div className="text-right shrink-0 space-y-0.5">
+                <p className="text-muted-foreground">
+                  {new Date(entry.changedAt).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </p>
+                {entry.userName && (
+                  <p className="text-muted-foreground/60">{entry.userName}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Protocolo Section ───────────────────────────────────────────────────────
 
 const PROTOCOLO_TIPO_META: Record<string, { label: string; color: string; icon: string }> = {
@@ -1130,7 +1228,7 @@ function ExpedienteDetail({
   const [deleteAccionId, setDeleteAccionId] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [cobroOpen, setCobroOpen] = useState(false);
-  const [tab, setTab] = useState<"registro" | "hitos" | "automatizaciones" | "inteligencia" | "documentos">("registro");
+  const [tab, setTab] = useState<"registro" | "hitos" | "automatizaciones" | "inteligencia" | "documentos" | "historial">("registro");
   const [linkCopied, setLinkCopied] = useState(false);
 
   const { data, isLoading, refetch } = trpc.expedientes.get.useQuery({ id: expedienteId });
@@ -1159,6 +1257,10 @@ function ExpedienteDetail({
       { enabled: tab === "documentos" }
     );
   const deleteDocMut = trpc.expedientes.deleteDocumento.useMutation({ onSuccess: () => refetchDocs() });
+  const { data: auditEntries = [], isLoading: loadingAudit } = trpc.expedientes.auditLog.useQuery(
+    { expedienteId },
+    { enabled: tab === "historial" }
+  );
   const revertMut = trpc.expedientes.revertAutomation.useMutation({ onSuccess: () => { refetchLogs(); refetch(); } });
   const generateTokenMut = trpc.expedientes.generateLandingToken.useMutation({
     onSuccess: () => refetch(),
@@ -1302,7 +1404,7 @@ function ExpedienteDetail({
           {/* Tabs registro / hitos / automatizaciones */}
           <div>
             <div className="flex gap-1 mb-4 bg-white/[0.03] rounded-lg p-1 w-fit flex-wrap">
-              {(["registro", "hitos", "automatizaciones", "inteligencia", "documentos"] as const).map((t) => (
+              {(["registro", "hitos", "automatizaciones", "inteligencia", "documentos", "historial"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -1310,10 +1412,11 @@ function ExpedienteDetail({
                     tab === t ? "bg-white/10 text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {t === "registro" ? `Registro (${registro.length})`
-                    : t === "hitos" ? `Hitos (${hitos.length})`
+                  {t === "registro"      ? `Registro (${registro.length})`
+                    : t === "hitos"      ? `Hitos (${hitos.length})`
                     : t === "inteligencia" ? "🤖 Inteligencia"
                     : t === "documentos" ? "📎 Documentos"
+                    : t === "historial"  ? "🔍 Historial"
                     : "Automatizaciones"}
                 </button>
               ))}
@@ -1624,6 +1727,10 @@ function ExpedienteDetail({
                   </>
                 )}
               </div>
+            )}
+
+            {tab === "historial" && (
+              <AuditTab entries={auditEntries as any[]} loading={loadingAudit} />
             )}
 
             {tab === "documentos" && (
