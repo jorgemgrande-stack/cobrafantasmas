@@ -326,10 +326,13 @@ function ExpedienteModal({
               </div>
               <div>
                 <Label className="text-xs">Cazador asignado</Label>
-                <Select value={form.cazadorId} onValueChange={set("cazadorId")}>
+                <Select
+                  value={form.cazadorId || "none"}
+                  onValueChange={(v) => set("cazadorId")(v === "none" ? "" : v)}
+                >
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Sin asignar" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
+                    <SelectItem value="none">Sin asignar</SelectItem>
                     {cazadores.map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>{c.fullName}</SelectItem>
                     ))}
@@ -1133,12 +1136,15 @@ export default function ExpedientesManager() {
                   placeholder="Deudor, expediente, acreedor..."
                   value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
-              <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+              <Select
+                value={estadoFilter || "all"}
+                onValueChange={(v) => setEstadoFilter(v === "all" ? "" : v)}
+              >
                 <SelectTrigger className="h-8 w-36 text-xs bg-white/[0.03] border-white/[0.08]">
                   <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   {Object.entries(ESTADO_META).map(([k, v]) => (
                     <SelectItem key={k} value={k}>{v.label}</SelectItem>
                   ))}
