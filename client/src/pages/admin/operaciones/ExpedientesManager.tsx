@@ -618,6 +618,233 @@ function AccionModal({
   );
 }
 
+// ─── Documentos Tab ──────────────────────────────────────────────────────────
+
+const TIPO_DOC_META: Record<string, { label: string; color: string; icon: string }> = {
+  contrato:       { label: "Contrato",       color: "text-blue-400 bg-blue-400/10 border-blue-400/20",       icon: "📄" },
+  requerimiento:  { label: "Requerimiento",  color: "text-orange-400 bg-orange-400/10 border-orange-400/20", icon: "📋" },
+  evidencia:      { label: "Evidencia",      color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",       icon: "📸" },
+  acuerdo:        { label: "Acuerdo",        color: "text-green-400 bg-green-400/10 border-green-400/20",    icon: "🤝" },
+  identificacion: { label: "Identificación", color: "text-purple-400 bg-purple-400/10 border-purple-400/20", icon: "🪪" },
+  extracto:       { label: "Extracto",       color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20", icon: "📊" },
+  otro:           { label: "Otro",           color: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",       icon: "📁" },
+};
+
+function DocumentosTab({
+  expedienteId, documentos, loading, deleteMut, onUploaded,
+}: {
+  expedienteId: number;
+  documentos: any[];
+  loading: boolean;
+  onDeleted?: (id: number) => void;
+  deleteMut: { mutate: (input: { id: number }) => void; isPending: boolean };
+  onUploaded: () => void;
+}) {
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5"
+          onClick={() => setUploadOpen(true)}>
+          <Plus className="w-3.5 h-3.5" /> Subir documento
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : documentos.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <div className="text-3xl mb-2">📂</div>
+          <p className="text-sm">Sin documentos adjuntos</p>
+          <Button size="sm" variant="outline" className="mt-3 text-xs" onClick={() => setUploadOpen(true)}>
+            <Plus className="w-3.5 h-3.5 mr-1" /> Subir primero
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {documentos.map((doc: any) => {
+            const meta = TIPO_DOC_META[doc.tipo] ?? TIPO_DOC_META.otro;
+            return (
+              <div key={doc.id}
+                className="flex items-center gap-3 bg-white/[0.02] border border-white/[0.05] rounded-xl px-3 py-2.5 group hover:bg-white/[0.04] transition-colors">
+                <span className="text-xl shrink-0">{meta.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{doc.nombre}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${meta.color}`}>
+                      {meta.label}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(doc.createdAt).toLocaleDateString("es-ES")}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {doc.url && (
+                    <a
+                      href={doc.url} target="_blank" rel="noopener noreferrer"
+                      className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
+                      title="Descargar"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                    onClick={() => setDeleteId(doc.id)}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {uploadOpen && (
+        <UploadDocModal
+          open expedienteId={expedienteId}
+          onClose={() => setUploadOpen(false)}
+          onUploaded={() => { onUploaded(); setUploadOpen(false); }}
+        />
+      )}
+
+      <AlertDialog open={deleteId !== null} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar documento?</AlertDialogTitle>
+            <AlertDialogDescription>Esta operación no se puede deshacer.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive hover:bg-destructive/90"
+              onClick={() => { if (deleteId) { deleteMut.mutate({ id: deleteId }); setDeleteId(null); } }}>
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function UploadDocModal({
+  open, expedienteId, onClose, onUploaded,
+}: {
+  open: boolean; expedienteId: number; onClose: () => void; onUploaded: () => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [tipo, setTipo] = useState("otro");
+  const [nombre, setNombre] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  function handleFile(f: File) {
+    setFile(f);
+    if (!nombre) setNombre(f.name);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("expedienteId", String(expedienteId));
+      fd.append("tipo", tipo);
+      fd.append("nombre", nombre || file.name);
+      const res = await fetch("/api/upload/expediente-doc", { method: "POST", body: fd, credentials: "include" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Error al subir");
+      onUploaded();
+    } catch (err: any) {
+      setError(err.message ?? "Error desconocido");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm bg-[#0d0f14] border-white/10">
+        <DialogHeader>
+          <DialogTitle className="text-base font-semibold flex items-center gap-2">
+            <FileText className="w-4 h-4 text-cyan-400" />
+            Subir documento
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-3 mt-1">
+          {/* Zona de drop / selección */}
+          <label
+            className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl p-5 cursor-pointer transition-colors ${
+              file ? "border-cyan-500/40 bg-cyan-500/[0.04]" : "border-white/10 hover:border-white/20"
+            }`}
+          >
+            <input
+              type="file"
+              className="hidden"
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.zip"
+              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+            />
+            {file ? (
+              <>
+                <span className="text-2xl">📎</span>
+                <p className="text-sm font-medium text-center truncate max-w-[200px]">{file.name}</p>
+                <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>
+              </>
+            ) : (
+              <>
+                <FileText className="w-7 h-7 text-muted-foreground/40" />
+                <p className="text-sm text-muted-foreground text-center">
+                  Haz clic para seleccionar<br />
+                  <span className="text-xs">PDF, imágenes, Word, Excel — máx. 20 MB</span>
+                </p>
+              </>
+            )}
+          </label>
+
+          <div>
+            <Label className="text-xs">Tipo de documento</Label>
+            <Select value={tipo} onValueChange={setTipo}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(TIPO_DOC_META).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v.icon} {v.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs">Nombre del documento</Label>
+            <Input
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Contrato de servicios.pdf"
+              className="mt-1"
+            />
+          </div>
+
+          {error && <p className="text-xs text-red-400">{error}</p>}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+            <Button type="submit" size="sm" disabled={!file || uploading}>
+              {uploading ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <FileText className="w-3.5 h-3.5 mr-1.5" />}
+              {uploading ? "Subiendo..." : "Subir"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Panel de detalle ─────────────────────────────────────────────────────────
 
 // ─── Cobro Modal ──────────────────────────────────────────────────────────────
@@ -774,7 +1001,7 @@ function ExpedienteDetail({
   const [deleteAccionId, setDeleteAccionId] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [cobroOpen, setCobroOpen] = useState(false);
-  const [tab, setTab] = useState<"registro" | "hitos" | "automatizaciones" | "inteligencia">("registro");
+  const [tab, setTab] = useState<"registro" | "hitos" | "automatizaciones" | "inteligencia" | "documentos">("registro");
   const [linkCopied, setLinkCopied] = useState(false);
 
   const { data, isLoading, refetch } = trpc.expedientes.get.useQuery({ id: expedienteId });
@@ -787,6 +1014,12 @@ function ExpedienteDetail({
     { expedienteId },
     { enabled: tab === "inteligencia" }
   );
+  const { data: documentos = [], isLoading: loadingDocs, refetch: refetchDocs } =
+    trpc.expedientes.listDocumentos.useQuery(
+      { expedienteId },
+      { enabled: tab === "documentos" }
+    );
+  const deleteDocMut = trpc.expedientes.deleteDocumento.useMutation({ onSuccess: () => refetchDocs() });
   const revertMut = trpc.expedientes.revertAutomation.useMutation({ onSuccess: () => { refetchLogs(); refetch(); } });
   const generateTokenMut = trpc.expedientes.generateLandingToken.useMutation({
     onSuccess: () => refetch(),
@@ -930,7 +1163,7 @@ function ExpedienteDetail({
           {/* Tabs registro / hitos / automatizaciones */}
           <div>
             <div className="flex gap-1 mb-4 bg-white/[0.03] rounded-lg p-1 w-fit flex-wrap">
-              {(["registro", "hitos", "automatizaciones", "inteligencia"] as const).map((t) => (
+              {(["registro", "hitos", "automatizaciones", "inteligencia", "documentos"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -941,6 +1174,7 @@ function ExpedienteDetail({
                   {t === "registro" ? `Registro (${registro.length})`
                     : t === "hitos" ? `Hitos (${hitos.length})`
                     : t === "inteligencia" ? "🤖 Inteligencia"
+                    : t === "documentos" ? "📎 Documentos"
                     : "Automatizaciones"}
                 </button>
               ))}
@@ -1251,6 +1485,17 @@ function ExpedienteDetail({
                   </>
                 )}
               </div>
+            )}
+
+            {tab === "documentos" && (
+              <DocumentosTab
+                expedienteId={expedienteId}
+                documentos={documentos as any[]}
+                loading={loadingDocs}
+                onDeleted={() => deleteDocMut.mutate}
+                deleteMut={deleteDocMut}
+                onUploaded={() => refetchDocs()}
+              />
             )}
           </div>
 

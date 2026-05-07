@@ -1,9 +1,15 @@
 import { Router, Request, Response } from "express";
 import multer from "multer";
+import mysql from "mysql2/promise";
+import { drizzle } from "drizzle-orm/mysql2";
 import { storagePut } from "./storage";
 import { sdk } from "./_core/sdk";
 import { createMediaFile } from "./db";
 import { getUserFromRequest } from "./localAuth";
+import { expedienteDocumentos } from "../drizzle/schema";
+
+const _docPool = mysql.createPool({ uri: process.env.DATABASE_URL!, connectionLimit: 2 });
+const _docDb = drizzle(_docPool);
 
 const USE_LOCAL_AUTH = process.env.LOCAL_AUTH === "true";
 
@@ -45,6 +51,30 @@ async function requireAdmin(req: Request, res: Response, next: () => void) {
         return;
       }
       (req as Request & { adminUser: typeof user }).adminUser = user;
+    }
+    next();
+  } catch {
+    res.status(401).json({ error: "No autenticado." });
+  }
+}
+
+// Middleware staff (admin o staff)
+async function requireStaff(req: Request, res: Response, next: () => void) {
+  try {
+    if (USE_LOCAL_AUTH) {
+      const user = await getUserFromRequest(req);
+      if (!user || !["admin", "staff"].includes(user.role)) {
+        res.status(403).json({ error: "Acceso denegado." });
+        return;
+      }
+      (req as Request & { staffUser: typeof user }).staffUser = user;
+    } else {
+      const user = await sdk.authenticateRequest(req);
+      if (!user || !["admin", "staff"].includes(user.role)) {
+        res.status(403).json({ error: "Acceso denegado." });
+        return;
+      }
+      (req as Request & { staffUser: typeof user }).staffUser = user;
     }
     next();
   } catch {
@@ -292,6 +322,75 @@ router.post(
       const message = err instanceof Error ? err.message : "Error al subir el documento";
       res.status(500).json({ error: message });
     }
+  }
+);
+
+// POST /api/upload/expediente-doc — sube documento de expediente (admin o staff)
+const expedienteDocUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      "image/jpeg", "image/jpg", "image/png", "image/webp",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+      "application/zip",
+    ];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error("Tipo no permitido. Se aceptan PDF, imágenes, Word, Excel y ZIP."));
+  },
+});
+
+const TIPOS_DOC = ["contrato","requerimiento","evidencia","acuerdo","identificacion","extracto","otro"] as const;
+
+router.post(
+  "/api/upload/expediente-doc",
+  (req, res, next) => requireStaff(req, res, next),
+  (req: Request, res: Response) => {
+    expedienteDocUpload.single("file")(req, res, async (err) => {
+      if (err) {
+        const msg = err instanceof Error ? err.message : "Error procesando archivo";
+        res.status(400).json({ error: msg });
+        return;
+      }
+      try {
+        if (!req.file) { res.status(400).json({ error: "No se recibió archivo." }); return; }
+
+        const expedienteId = parseInt(req.body.expedienteId ?? "0");
+        if (!expedienteId) { res.status(400).json({ error: "expedienteId requerido." }); return; }
+
+        const tipo = (TIPOS_DOC.includes(req.body.tipo) ? req.body.tipo : "otro") as typeof TIPOS_DOC[number];
+        const nombre = (req.body.nombre?.trim() || req.file.originalname).slice(0, 255);
+
+        const { buffer, mimetype, originalname } = req.file;
+        const ext = originalname.split(".").pop() ?? "bin";
+        const ts  = Date.now();
+        const rnd = Math.random().toString(36).substring(2, 10);
+        const key = `cobrafantasmas/expedientes/${expedienteId}/${ts}-${rnd}.${ext}`;
+
+        const { url } = await storagePut(key, buffer, mimetype);
+
+        const staffUser = (req as Request & { staffUser?: { id: number } }).staffUser;
+        await _docDb.insert(expedienteDocumentos).values({
+          expedienteId,
+          tipo,
+          nombre,
+          s3Key: key,
+          s3Bucket: process.env.S3_BUCKET ?? "",
+          url,
+          uploadedBy: staffUser?.id ?? null,
+        });
+
+        res.json({ nombre, tipo, url, s3Key: key, createdAt: new Date().toISOString() });
+      } catch (e: unknown) {
+        console.error("[ExpedienteDocUpload]", e);
+        res.status(500).json({ error: e instanceof Error ? e.message : "Error al subir" });
+      }
+    });
   }
 );
 

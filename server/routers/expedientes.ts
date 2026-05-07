@@ -14,6 +14,7 @@ import {
   deudores,
   deudorContactos,
   expedienteAuditLog,
+  expedienteDocumentos,
 } from "../../drizzle/schema";
 import { gte } from "drizzle-orm";
 
@@ -1219,7 +1220,9 @@ export const expedientesRouter = router({
         diasSinActividad,
         accionesCompletadas,
         recupeRate: Math.round(recupeRate * 10) / 10,
-        deudorVinculado: deudor ? { nombre: deudor.nombre, nivelCooperacion: deudor.nivelCooperacion } : null,
+        deudorVinculado: deudor
+          ? { nombre: deudor.nombre, nivelCooperacion: deudor.nivelCooperacion, nivelRiesgo: deudor.nivelRiesgo }
+          : null,
       };
     }),
 
@@ -1350,4 +1353,23 @@ export const expedientesRouter = router({
       ultimasRecuperaciones,
     };
   }),
+
+  // ── Documentos del expediente ─────────────────────────────────────────────
+
+  listDocumentos: staffProcedure
+    .input(z.object({ expedienteId: z.number() }))
+    .query(async ({ input }) => {
+      return db
+        .select()
+        .from(expedienteDocumentos)
+        .where(eq(expedienteDocumentos.expedienteId, input.expedienteId))
+        .orderBy(desc(expedienteDocumentos.createdAt));
+    }),
+
+  deleteDocumento: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.delete(expedienteDocumentos).where(eq(expedienteDocumentos.id, input.id));
+      return { ok: true };
+    }),
 });
