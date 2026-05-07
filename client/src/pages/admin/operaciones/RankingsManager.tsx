@@ -35,9 +35,10 @@ const ESTADO_COLOR: Record<string, string> = {
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default function RankingsManager() {
-  const { data, isLoading } = trpc.expedientes.rankings.useQuery(undefined, {
-    refetchInterval: 60_000,
-  });
+  const { data, isLoading, isError } = trpc.expedientes.rankings.useQuery(
+    undefined as any,
+    { refetchInterval: 60_000 },
+  );
 
   if (isLoading) {
     return (
@@ -47,7 +48,13 @@ export default function RankingsManager() {
     );
   }
 
-  if (!data) return null;
+  if (isError || !data) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
+        Error cargando rankings. Comprueba la consola del servidor.
+      </div>
+    );
+  }
 
   const { global: g, estadoBreakdown, cazadorRanking, ultimasRecuperaciones } = data;
   const totalEstados = Object.values(estadoBreakdown).reduce((a, b) => a + b, 0) || 1;
