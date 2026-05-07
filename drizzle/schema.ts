@@ -3152,8 +3152,10 @@ export const expedientes = mysqlTable("expedientes", {
   // Fechas
   fechaApertura:           varchar("fechaApertura", { length: 10 }),
   fechaCierre:             varchar("fechaCierre", { length: 10 }),
-  // Landing pública
+  // Landing pública acreedor
   landingToken:            varchar("landingToken", { length: 64 }).unique(),
+  // Portal deudor
+  deudorToken:             varchar("deudorToken", { length: 64 }).unique(),
   // Notas
   observacionesInternas:   text("observacionesInternas"),
   createdAt:               timestamp("createdAt").defaultNow().notNull(),

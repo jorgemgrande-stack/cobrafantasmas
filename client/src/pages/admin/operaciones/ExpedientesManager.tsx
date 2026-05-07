@@ -1229,7 +1229,8 @@ function ExpedienteDetail({
   const [editOpen, setEditOpen] = useState(false);
   const [cobroOpen, setCobroOpen] = useState(false);
   const [tab, setTab] = useState<"registro" | "hitos" | "automatizaciones" | "inteligencia" | "documentos" | "historial">("registro");
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [linkCopied,       setLinkCopied]       = useState(false);
+  const [deudorLinkCopied, setDeudorLinkCopied] = useState(false);
 
   const { data, isLoading, refetch } = trpc.expedientes.get.useQuery({ id: expedienteId });
   const deleteAccionMut = trpc.expedientes.deleteAccion.useMutation({ onSuccess: () => refetch() });
@@ -1265,12 +1266,23 @@ function ExpedienteDetail({
   const generateTokenMut = trpc.expedientes.generateLandingToken.useMutation({
     onSuccess: () => refetch(),
   });
+  const generateDeudorTokenMut = trpc.expedientes.generateDeudorToken.useMutation({
+    onSuccess: () => refetch(),
+  });
 
   function copyLandingLink(token: string) {
     const url = `${window.location.origin}/seguimiento/${token}`;
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2500);
+    });
+  }
+
+  function copyDeudorLink(token: string) {
+    const url = `${window.location.origin}/deudor/${token}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setDeudorLinkCopied(true);
+      setTimeout(() => setDeudorLinkCopied(false), 2500);
     });
   }
 
@@ -1805,6 +1817,62 @@ function ExpedienteDetail({
                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     : <Link2 className="w-3.5 h-3.5" />}
                   Generar enlace de seguimiento
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Portal del deudor */}
+          <div className="border border-white/[0.06] rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Link2 className="w-3.5 h-3.5 text-amber-400" />
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Portal del deudor</p>
+            </div>
+            {data.deudorToken ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2">
+                  <span className="text-xs text-muted-foreground font-mono truncate flex-1">
+                    {window.location.origin}/deudor/{data.deudorToken}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 h-7 text-xs gap-1.5"
+                    onClick={() => copyDeudorLink(data.deudorToken!)}
+                  >
+                    {deudorLinkCopied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {deudorLinkCopied ? "¡Copiado!" : "Copiar enlace"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0 text-muted-foreground"
+                    title="Regenerar enlace"
+                    onClick={() => generateDeudorTokenMut.mutate({ id: expedienteId })}
+                    disabled={generateDeudorTokenMut.isPending}
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${generateDeudorTokenMut.isPending ? "animate-spin" : ""}`} />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Genera un enlace privado para que el deudor consulte su deuda y proponga acuerdos de pago.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full h-8 text-xs gap-1.5"
+                  onClick={() => generateDeudorTokenMut.mutate({ id: expedienteId })}
+                  disabled={generateDeudorTokenMut.isPending}
+                >
+                  {generateDeudorTokenMut.isPending
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    : <Link2 className="w-3.5 h-3.5" />}
+                  Generar portal del deudor
                 </Button>
               </div>
             )}

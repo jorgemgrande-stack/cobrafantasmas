@@ -645,6 +645,13 @@
       "when": 1746730000000,
       "tag": "0090_fase8_protocolos",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "5",
+      "when": 1746816400000,
+      "tag": "0091_fase10_deudor_portal",
+      "breakpoints": true
     }
   ]
 }

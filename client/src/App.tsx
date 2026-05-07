@@ -11,6 +11,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 // ── PUBLIC PAGES (carga inmediata — visibles sin autenticación) ──────────────
 import Home from "./pages/Home";
 import SeguimientoCliente from "./pages/SeguimientoCliente";
+import DeudorPortal from "./pages/DeudorPortal";
 import ComoFunciona from "./pages/ComoFunciona";
 import Protocolos from "./pages/Protocolos";
 import ElSistema from "./pages/ElSistema";
@@ -147,6 +148,7 @@ function Router() {
       {/* ── PUBLIC ROUTES ── */}
       <Route path="/" component={Home} />
       <Route path="/seguimiento/:token" component={SeguimientoCliente} />
+      <Route path="/deudor/:token" component={DeudorPortal} />
       <Route path="/como-funciona" component={ComoFunciona} />
       <Route path="/protocolos" component={Protocolos} />
       <Route path="/el-sistema" component={ElSistema} />

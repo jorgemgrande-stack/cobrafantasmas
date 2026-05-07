@@ -1423,4 +1423,95 @@ export const expedientesRouter = router({
       await db.delete(expedienteDocumentos).where(eq(expedienteDocumentos.id, input.id));
       return { ok: true };
     }),
+
+  // ── Portal del deudor ─────────────────────────────────────────────────────
+
+  generateDeudorToken: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const token = crypto.randomUUID().replace(/-/g, "");
+      await db
+        .update(expedientes)
+        .set({ deudorToken: token })
+        .where(eq(expedientes.id, input.id));
+      return { token };
+    }),
+
+  publicDeudorLanding: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ input }) => {
+      const [exp] = await db
+        .select()
+        .from(expedientes)
+        .where(eq(expedientes.deudorToken, input.token));
+
+      if (!exp) throw new TRPCError({ code: "NOT_FOUND", message: "Expediente no encontrado" });
+
+      // Solo datos que el deudor debe ver — sin scoring interno, sin estrategia, sin observaciones
+      const pagosAcordados = await db
+        .select({
+          id:              accionesOperativas.id,
+          tipo:            accionesOperativas.tipo,
+          titulo:          accionesOperativas.titulo,
+          estado:          accionesOperativas.estado,
+          fechaProgramada: accionesOperativas.fechaProgramada,
+          fechaCompletada: accionesOperativas.fechaCompletada,
+          createdAt:       accionesOperativas.createdAt,
+        })
+        .from(accionesOperativas)
+        .where(
+          and(
+            eq(accionesOperativas.expedienteId, exp.id),
+            or(
+              eq(accionesOperativas.tipo, "acuerdo"),
+              eq(accionesOperativas.tipo, "negociacion"),
+              eq(accionesOperativas.tipo, "hito"),
+            ),
+          )
+        )
+        .orderBy(desc(accionesOperativas.createdAt))
+        .limit(20);
+
+      return {
+        numeroExpediente:  exp.numeroExpediente,
+        estado:            exp.estado,
+        importeDeuda:      exp.importeDeuda,
+        importeRecuperado: exp.importeRecuperado,
+        tipoDeuda:         exp.tipoDeuda,
+        fechaApertura:     exp.fechaApertura,
+        pagosAcordados,
+      };
+    }),
+
+  deudorProponerPago: publicProcedure
+    .input(z.object({
+      token:       z.string(),
+      nombre:      z.string().min(2).max(256),
+      email:       z.string().email().optional(),
+      telefono:    z.string().max(32).optional(),
+      propuesta:   z.string().min(10).max(2000),
+      importe:     z.number().positive().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const [exp] = await db
+        .select({ id: expedientes.id, numeroExpediente: expedientes.numeroExpediente })
+        .from(expedientes)
+        .where(eq(expedientes.deudorToken, input.token));
+
+      if (!exp) throw new TRPCError({ code: "NOT_FOUND", message: "Expediente no encontrado" });
+
+      const importeStr = input.importe ? ` (${input.importe.toFixed(2)} €)` : "";
+      await db.insert(accionesOperativas).values({
+        expedienteId: exp.id,
+        tipo:         "negociacion",
+        titulo:       `Propuesta del deudor${importeStr}`,
+        descripcion:  `Nombre: ${input.nombre}\nContacto: ${input.email ?? ""} ${input.telefono ?? ""}\n\n${input.propuesta}`,
+        prioridad:    "alta",
+        estado:       "pendiente",
+        visibleCliente: false,
+        createdAt:    new Date(),
+      });
+
+      return { ok: true, numeroExpediente: exp.numeroExpediente };
+    }),
 });
