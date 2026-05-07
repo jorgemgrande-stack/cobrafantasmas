@@ -1664,22 +1664,23 @@ export const crmRouter = router({
           : now.toISOString().split("T")[0];
         const reservationRef = `RES-${Date.now().toString(36).toUpperCase()}`;
         const reservationNumber = await generateReservationNum("crm:confirmPayment", String(ctx.user.id));
-        const [resResult] = await db.insert(reservations).values({
-          productId: mainProductId, // FIX: usar el productId principal del presupuesto
+        const resInsert = await db.insert(reservations).values({
+          productId: mainProductId,
           productName: quote.title,
-          bookingDate: serviceDate, // BUG #1 FIX: fecha preferida del lead, no hoy
+          bookingDate: serviceDate,
           people: lead.numberOfPersons ?? lead.numberOfAdults ?? 1,
           amountTotal: Math.round(total * 100),
           amountPaid: Math.round((input.paidAmount ?? total) * 100),
           status: "paid",
           statusReservation: "CONFIRMADA",
           statusPayment: "PAGADO",
-          // Canal: presupuesto cobrado manualmente por el equipo → siempre ONLINE_ASISTIDO
           channel: "ONLINE_ASISTIDO",
           customerName: lead.name,
           customerEmail: lead.email,
           customerPhone: lead.phone ?? "",
           merchantOrder: reservationRef.substring(0, 12),
+          quoteId: quote.id,
+          quoteSource: "presupuesto",
           reservationNumber,
           paymentMethod: input.paymentMethod ?? "efectivo",
           transferProofUrl: input.transferProofUrl ?? null,
@@ -1692,7 +1693,18 @@ export const crmRouter = router({
           createdAt: Date.now(),
           updatedAt: Date.now(),
           paidAt: Date.now(),
+        }).catch((insertErr: unknown) => {
+          const e = insertErr as { code?: string; sqlMessage?: string; message?: string };
+          console.error("[confirmPayment] INSERT reservations failed:", {
+            code: e?.code,
+            sqlMessage: e?.sqlMessage,
+            message: e?.message,
+            quoteId: input.quoteId,
+            reservationNumber,
+          });
+          throw insertErr;
         });
+        const [resResult] = resInsert;
         const reservationId = (resResult as { insertId: number }).insertId;
         // FIX: Vincular factura ↔ reserva recién creadass
         await db.update(invoices).set({ reservationId, updatedAt: now }).where(eq(invoices.id, invoiceId));
