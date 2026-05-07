@@ -2992,6 +2992,85 @@ export const commercialEmails = mysqlTable("commercial_emails", {
 export type CommercialEmail = typeof commercialEmails.$inferSelect;
 export type InsertCommercialEmail = typeof commercialEmails.$inferInsert;
 
+// ─── FASE 1: Entidades propias de Cobrafantasmas ─────────────────────────────
+
+export const acreedores = mysqlTable("acreedores", {
+  id:           int("id").autoincrement().primaryKey(),
+  nombre:       varchar("nombre", { length: 256 }).notNull(),
+  nif:          varchar("nif", { length: 32 }),
+  email:        varchar("email", { length: 256 }),
+  telefono:     varchar("telefono", { length: 64 }),
+  direccion:    text("direccion"),
+  organizacion: varchar("organizacion", { length: 256 }),
+  notas:        text("notas"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Acreedor = typeof acreedores.$inferSelect;
+export type InsertAcreedor = typeof acreedores.$inferInsert;
+
+export const deudores = mysqlTable("deudores", {
+  id:                    int("id").autoincrement().primaryKey(),
+  nombre:                varchar("nombre", { length: 256 }).notNull(),
+  nif:                   varchar("nif", { length: 32 }),
+  email:                 varchar("email", { length: 256 }),
+  telefono:              varchar("telefono", { length: 64 }),
+  direccion:             text("direccion"),
+  organizacion:          varchar("organizacion", { length: 256 }),
+  nivelCooperacion:      mysqlEnum("nivelCooperacion", ["desconocido", "colaborador", "evasivo", "hostil", "bloqueado"]).default("desconocido").notNull(),
+  nivelRiesgo:           int("nivelRiesgo").default(50).notNull(),
+  historialImpagos:      text("historialImpagos"),
+  ultimoContacto:        timestamp("ultimoContacto"),
+  totalDeudaAcumulada:   decimal("totalDeudaAcumulada", { precision: 12, scale: 2 }).default("0").notNull(),
+  notas:                 text("notas"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Deudor = typeof deudores.$inferSelect;
+export type InsertDeudor = typeof deudores.$inferInsert;
+
+export const deudorContactos = mysqlTable("deudor_contactos", {
+  id:        int("id").autoincrement().primaryKey(),
+  deudorId:  int("deudorId").notNull(),
+  tipo:      mysqlEnum("tipo", ["telefono", "email", "whatsapp", "direccion", "linkedin", "otro"]).notNull(),
+  valor:     varchar("valor", { length: 512 }).notNull(),
+  isPrimary: boolean("isPrimary").default(false).notNull(),
+  notas:     varchar("notas", { length: 256 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DeudorContacto = typeof deudorContactos.$inferSelect;
+export type InsertDeudorContacto = typeof deudorContactos.$inferInsert;
+
+export const expedienteAuditLog = mysqlTable("expediente_audit_log", {
+  id:            int("id").autoincrement().primaryKey(),
+  expedienteId:  int("expedienteId").notNull(),
+  campo:         varchar("campo", { length: 64 }).notNull(),
+  valorAnterior: text("valorAnterior"),
+  valorNuevo:    text("valorNuevo"),
+  changedBy:     int("changedBy"),
+  changedAt:     timestamp("changedAt").defaultNow().notNull(),
+});
+
+export type ExpedienteAuditLogEntry = typeof expedienteAuditLog.$inferSelect;
+
+export const expedienteDocumentos = mysqlTable("expediente_documentos", {
+  id:           int("id").autoincrement().primaryKey(),
+  expedienteId: int("expedienteId").notNull(),
+  tipo:         mysqlEnum("tipo", ["contrato", "requerimiento", "evidencia", "acuerdo", "identificacion", "extracto", "otro"]).notNull(),
+  nombre:       varchar("nombre", { length: 256 }).notNull(),
+  s3Key:        varchar("s3Key", { length: 512 }),
+  s3Bucket:     varchar("s3Bucket", { length: 128 }),
+  url:          varchar("url", { length: 1024 }),
+  uploadedBy:   int("uploadedBy"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ExpedienteDocumento = typeof expedienteDocumentos.$inferSelect;
+export type InsertExpedienteDocumento = typeof expedienteDocumentos.$inferInsert;
+
 // ─── EXPEDIENTES OPERATIVOS — Cobrafantasmas ──────────────────────────────────
 
 export const expedientes = mysqlTable("expedientes", {
@@ -3002,7 +3081,10 @@ export const expedientes = mysqlTable("expedientes", {
     "negociacion", "acuerdo_parcial", "recuperacion_parcial",
     "recuperado", "incobrable", "suspendido", "escalada_juridica", "finalizado",
   ]).default("pendiente_activacion").notNull(),
-  // Acreedor
+  // FK a entidades propias (nullable para compatibilidad con datos existentes)
+  acreedorId:              int("acreedorId"),
+  deudorId:                int("deudorId"),
+  // Acreedor legacy (texto plano — mantener hasta migración completa de datos)
   clienteId:               int("clienteId"),
   clienteNombre:           varchar("clienteNombre", { length: 256 }),
   // Deudor

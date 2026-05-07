@@ -161,6 +161,7 @@ interface ExpedienteFormData {
   deudorNombre: string; deudorTelefono: string; deudorEmail: string;
   deudorDireccion: string; deudorNif: string; importeDeuda: string;
   porcentajeExito: string; tipoDeuda: string; clienteNombre: string;
+  acreedorId: string; deudorId: string;
   cazadorId: string; modoOperacion: "manual" | "semi-automatico" | "automatico";
   probabilidadRecuperacion: string; intensidadOperativa: string;
   observacionesInternas: string; estado?: EstadoExpediente;
@@ -172,6 +173,7 @@ const defaultForm = (): ExpedienteFormData => ({
   deudorNombre: "", deudorTelefono: "", deudorEmail: "",
   deudorDireccion: "", deudorNif: "", importeDeuda: "",
   porcentajeExito: "20", tipoDeuda: "", clienteNombre: "",
+  acreedorId: "", deudorId: "",
   cazadorId: "", modoOperacion: "manual",
   probabilidadRecuperacion: "50", intensidadOperativa: "1",
   observacionesInternas: "",
@@ -184,6 +186,9 @@ function ExpedienteModal({
   cazadores: { id: number; fullName: string }[]; onSaved: () => void;
 }) {
   const isEdit = !!expediente;
+  const { data: acreedoresList = [] } = trpc.expedientes.listAcreedores.useQuery({});
+  const { data: deudoresList = [] } = trpc.expedientes.listDeudores.useQuery({});
+
   const [form, setForm] = useState<ExpedienteFormData>(() =>
     expediente ? {
       deudorNombre: expediente.deudorNombre ?? "",
@@ -195,6 +200,8 @@ function ExpedienteModal({
       porcentajeExito: expediente.porcentajeExito ?? "20",
       tipoDeuda: expediente.tipoDeuda ?? "",
       clienteNombre: expediente.clienteNombre ?? "",
+      acreedorId: expediente.acreedorId ? String(expediente.acreedorId) : "",
+      deudorId: expediente.deudorId ? String(expediente.deudorId) : "",
       cazadorId: expediente.cazadorId ? String(expediente.cazadorId) : "",
       modoOperacion: expediente.modoOperacion ?? "manual",
       probabilidadRecuperacion: String(expediente.probabilidadRecuperacion ?? 50),
@@ -228,6 +235,8 @@ function ExpedienteModal({
       porcentajeExito: parseFloat(form.porcentajeExito) || 20,
       tipoDeuda: form.tipoDeuda || undefined,
       clienteNombre: form.clienteNombre || undefined,
+      acreedorId: form.acreedorId ? parseInt(form.acreedorId) : undefined,
+      deudorId: form.deudorId ? parseInt(form.deudorId) : undefined,
       cazadorId: form.cazadorId ? parseInt(form.cazadorId) : undefined,
       modoOperacion: form.modoOperacion,
       probabilidadRecuperacion: parseInt(form.probabilidadRecuperacion) || 50,
@@ -320,10 +329,48 @@ function ExpedienteModal({
           <section className="border border-white/[0.06] rounded-xl p-4 space-y-3">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Configuración operativa</p>
             <div className="grid grid-cols-2 gap-3">
+              {acreedoresList.length > 0 && (
+                <div>
+                  <Label className="text-xs">Acreedor (entidad registrada)</Label>
+                  <Select
+                    value={form.acreedorId || "none"}
+                    onValueChange={(v) => set("acreedorId")(v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Sin acreedor" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin acreedor</SelectItem>
+                      {acreedoresList.map((a: any) => (
+                        <SelectItem key={a.id} value={String(a.id)}>
+                          {a.nombre}{a.organizacion ? ` (${a.organizacion})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div>
-                <Label className="text-xs">Acreedor (cliente)</Label>
-                <Input value={form.clienteNombre} onChange={(e) => set("clienteNombre")(e.target.value)} className="mt-1" />
+                <Label className="text-xs">Acreedor (texto libre)</Label>
+                <Input value={form.clienteNombre} onChange={(e) => set("clienteNombre")(e.target.value)} className="mt-1" placeholder="Nombre del acreedor" />
               </div>
+              {deudoresList.length > 0 && (
+                <div>
+                  <Label className="text-xs">Vincular deudor existente</Label>
+                  <Select
+                    value={form.deudorId || "none"}
+                    onValueChange={(v) => set("deudorId")(v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Sin deudor vinculado" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin deudor vinculado</SelectItem>
+                      {deudoresList.map((d: any) => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          {d.nombre}{d.nif ? ` — ${d.nif}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div>
                 <Label className="text-xs">Cazador asignado</Label>
                 <Select

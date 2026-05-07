@@ -631,6 +631,13 @@
       "when": 1778183100000,
       "tag": "0088_payment_plans_installments",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "5",
+      "when": 1746643200000,
+      "tag": "0089_fase1_core",
+      "breakpoints": true
     }
   ]
 }

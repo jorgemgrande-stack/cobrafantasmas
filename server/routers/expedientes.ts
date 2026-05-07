@@ -10,6 +10,10 @@ import {
   documentCounters,
   monitors,
   expedienteAutomationLogs,
+  acreedores,
+  deudores,
+  deudorContactos,
+  expedienteAuditLog,
 } from "../../drizzle/schema";
 import { gte } from "drizzle-orm";
 
@@ -232,6 +236,8 @@ const expedienteCreateInput = z.object({
   tipoDeuda: z.string().optional(),
   clienteId: z.number().optional(),
   clienteNombre: z.string().optional(),
+  acreedorId: z.number().optional(),
+  deudorId: z.number().optional(),
   cazadorId: z.number().optional(),
   modoOperacion: z.enum(["manual", "semi-automatico", "automatico"]).default("manual"),
   probabilidadRecuperacion: z.number().min(0).max(100).default(50),
@@ -262,6 +268,29 @@ const expedienteUpdateInput = expedienteCreateInput.partial().extend({
   progresoFinanciero: z.number().min(0).max(100).optional(),
   progresoPsicologico: z.number().min(0).max(100).optional(),
   fechaCierre: z.string().optional(),
+});
+
+const acreedorCreateInput = z.object({
+  nombre:       z.string().min(2),
+  nif:          z.string().optional(),
+  email:        z.string().email().optional().or(z.literal("")),
+  telefono:     z.string().optional(),
+  direccion:    z.string().optional(),
+  organizacion: z.string().optional(),
+  notas:        z.string().optional(),
+});
+
+const deudorCreateInput = z.object({
+  nombre:              z.string().min(2),
+  nif:                 z.string().optional(),
+  email:               z.string().email().optional().or(z.literal("")),
+  telefono:            z.string().optional(),
+  direccion:           z.string().optional(),
+  organizacion:        z.string().optional(),
+  nivelCooperacion:    z.enum(["desconocido", "colaborador", "evasivo", "hostil", "bloqueado"]).default("desconocido"),
+  nivelRiesgo:         z.number().min(0).max(100).default(50),
+  notas:               z.string().optional(),
+  totalDeudaAcumulada: z.number().min(0).default(0),
 });
 
 const accionCreateInput = z.object({
@@ -369,6 +398,8 @@ export const expedientesRouter = router({
       const [result] = await db.insert(expedientes).values({
         numeroExpediente,
         estado: "pendiente_activacion",
+        acreedorId: input.acreedorId,
+        deudorId: input.deudorId,
         deudorNombre: input.deudorNombre,
         deudorTelefono: input.deudorTelefono,
         deudorEmail: input.deudorEmail,
@@ -436,8 +467,13 @@ export const expedientesRouter = router({
       if (rest.fechaApertura !== undefined) updateData.fechaApertura = rest.fechaApertura;
       if (rest.fechaCierre !== undefined) updateData.fechaCierre = rest.fechaCierre;
       if (rest.observacionesInternas !== undefined) updateData.observacionesInternas = rest.observacionesInternas;
+      if (rest.acreedorId           !== undefined) updateData.acreedorId           = rest.acreedorId;
+      if (rest.deudorId             !== undefined) updateData.deudorId             = rest.deudorId;
 
       if (Object.keys(updateData).length === 0) return { success: true };
+
+      // Leer estado anterior para audit log
+      const [before] = await db.select().from(expedientes).where(eq(expedientes.id, id));
 
       await db
         .update(expedientes)
@@ -448,6 +484,23 @@ export const expedientesRouter = router({
         .select()
         .from(expedientes)
         .where(eq(expedientes.id, id));
+
+      // Audit log para campos críticos
+      const AUDIT_CAMPOS = ["estado", "importeRecuperado", "cazadorId", "acreedorId", "deudorId", "modoOperacion"] as const;
+      if (before) {
+        const auditEntries = AUDIT_CAMPOS
+          .filter(c => updateData[c] !== undefined && String(updateData[c]) !== String((before as any)[c]))
+          .map(c => ({
+            expedienteId: id,
+            campo: c,
+            valorAnterior: String((before as any)[c] ?? ""),
+            valorNuevo: String(updateData[c] ?? ""),
+            changedBy: ctx.user.id,
+          }));
+        if (auditEntries.length > 0) {
+          db.insert(expedienteAuditLog).values(auditEntries).catch(() => {});
+        }
+      }
 
       // Automatización: cambio de estado
       if (rest.estado !== undefined) {
@@ -757,6 +810,192 @@ export const expedientesRouter = router({
         byDate[key].push(row);
       }
       return byDate;
+    }),
+
+  // ── Acreedores ────────────────────────────────────────────────────────────
+
+  listAcreedores: staffProcedure
+    .input(z.object({ search: z.string().optional() }).optional())
+    .query(async ({ input }) => {
+      let rows = await db.select().from(acreedores).orderBy(asc(acreedores.nombre));
+      if (input?.search) {
+        const q = input.search.toLowerCase();
+        rows = rows.filter(r =>
+          r.nombre.toLowerCase().includes(q) ||
+          (r.nif ?? "").toLowerCase().includes(q) ||
+          (r.email ?? "").toLowerCase().includes(q) ||
+          (r.organizacion ?? "").toLowerCase().includes(q),
+        );
+      }
+      return rows;
+    }),
+
+  getAcreedor: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const [row] = await db.select().from(acreedores).where(eq(acreedores.id, input.id));
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Acreedor no encontrado" });
+      return row;
+    }),
+
+  createAcreedor: staffProcedure
+    .input(acreedorCreateInput)
+    .mutation(async ({ input }) => {
+      const [result] = await db.insert(acreedores).values({
+        nombre:       input.nombre,
+        nif:          input.nif,
+        email:        input.email || undefined,
+        telefono:     input.telefono,
+        direccion:    input.direccion,
+        organizacion: input.organizacion,
+        notas:        input.notas,
+      });
+      const insertId = (result as any).insertId as number;
+      const [created] = await db.select().from(acreedores).where(eq(acreedores.id, insertId));
+      return created;
+    }),
+
+  updateAcreedor: staffProcedure
+    .input(acreedorCreateInput.partial().extend({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const { id, ...rest } = input;
+      const data: Record<string, unknown> = {};
+      if (rest.nombre       !== undefined) data.nombre       = rest.nombre;
+      if (rest.nif          !== undefined) data.nif          = rest.nif;
+      if (rest.email        !== undefined) data.email        = rest.email || null;
+      if (rest.telefono     !== undefined) data.telefono     = rest.telefono;
+      if (rest.direccion    !== undefined) data.direccion    = rest.direccion;
+      if (rest.organizacion !== undefined) data.organizacion = rest.organizacion;
+      if (rest.notas        !== undefined) data.notas        = rest.notas;
+      if (Object.keys(data).length > 0) {
+        await db.update(acreedores).set(data).where(eq(acreedores.id, id));
+      }
+      const [updated] = await db.select().from(acreedores).where(eq(acreedores.id, id));
+      return updated;
+    }),
+
+  deleteAcreedor: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.update(expedientes).set({ acreedorId: null } as any).where(eq(expedientes.acreedorId as any, input.id));
+      await db.delete(acreedores).where(eq(acreedores.id, input.id));
+      return { success: true };
+    }),
+
+  // ── Deudores ──────────────────────────────────────────────────────────────
+
+  listDeudores: staffProcedure
+    .input(z.object({ search: z.string().optional() }).optional())
+    .query(async ({ input }) => {
+      let rows = await db.select().from(deudores).orderBy(asc(deudores.nombre));
+      if (input?.search) {
+        const q = input.search.toLowerCase();
+        rows = rows.filter(r =>
+          r.nombre.toLowerCase().includes(q) ||
+          (r.nif ?? "").toLowerCase().includes(q) ||
+          (r.email ?? "").toLowerCase().includes(q),
+        );
+      }
+      return rows;
+    }),
+
+  getDeudor: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const [row] = await db.select().from(deudores).where(eq(deudores.id, input.id));
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Deudor no encontrado" });
+      const contactos = await db.select().from(deudorContactos).where(eq(deudorContactos.deudorId, input.id));
+      return { ...row, contactos };
+    }),
+
+  createDeudor: staffProcedure
+    .input(deudorCreateInput)
+    .mutation(async ({ input }) => {
+      const [result] = await db.insert(deudores).values({
+        nombre:              input.nombre,
+        nif:                 input.nif,
+        email:               input.email || undefined,
+        telefono:            input.telefono,
+        direccion:           input.direccion,
+        organizacion:        input.organizacion,
+        nivelCooperacion:    input.nivelCooperacion,
+        nivelRiesgo:         input.nivelRiesgo,
+        totalDeudaAcumulada: String(input.totalDeudaAcumulada),
+        notas:               input.notas,
+      });
+      const insertId = (result as any).insertId as number;
+      const [created] = await db.select().from(deudores).where(eq(deudores.id, insertId));
+      return created;
+    }),
+
+  updateDeudor: staffProcedure
+    .input(deudorCreateInput.partial().extend({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const { id, ...rest } = input;
+      const data: Record<string, unknown> = {};
+      if (rest.nombre              !== undefined) data.nombre              = rest.nombre;
+      if (rest.nif                 !== undefined) data.nif                 = rest.nif;
+      if (rest.email               !== undefined) data.email               = rest.email || null;
+      if (rest.telefono            !== undefined) data.telefono            = rest.telefono;
+      if (rest.direccion           !== undefined) data.direccion           = rest.direccion;
+      if (rest.organizacion        !== undefined) data.organizacion        = rest.organizacion;
+      if (rest.nivelCooperacion    !== undefined) data.nivelCooperacion    = rest.nivelCooperacion;
+      if (rest.nivelRiesgo         !== undefined) data.nivelRiesgo         = rest.nivelRiesgo;
+      if (rest.totalDeudaAcumulada !== undefined) data.totalDeudaAcumulada = String(rest.totalDeudaAcumulada);
+      if (rest.notas               !== undefined) data.notas               = rest.notas;
+      if (Object.keys(data).length > 0) {
+        await db.update(deudores).set(data).where(eq(deudores.id, id));
+      }
+      const [updated] = await db.select().from(deudores).where(eq(deudores.id, id));
+      return updated;
+    }),
+
+  // ── Contactos de deudor ───────────────────────────────────────────────────
+
+  addDeudorContacto: staffProcedure
+    .input(z.object({
+      deudorId:  z.number(),
+      tipo:      z.enum(["telefono", "email", "whatsapp", "direccion", "linkedin", "otro"]),
+      valor:     z.string().min(1),
+      isPrimary: z.boolean().default(false),
+      notas:     z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      if (input.isPrimary) {
+        await db.update(deudorContactos)
+          .set({ isPrimary: false } as any)
+          .where(and(eq(deudorContactos.deudorId, input.deudorId), eq(deudorContactos.tipo, input.tipo)));
+      }
+      const [result] = await db.insert(deudorContactos).values({
+        deudorId:  input.deudorId,
+        tipo:      input.tipo,
+        valor:     input.valor,
+        isPrimary: input.isPrimary,
+        notas:     input.notas,
+      });
+      const insertId = (result as any).insertId as number;
+      const [created] = await db.select().from(deudorContactos).where(eq(deudorContactos.id, insertId));
+      return created;
+    }),
+
+  deleteDeudorContacto: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.delete(deudorContactos).where(eq(deudorContactos.id, input.id));
+      return { success: true };
+    }),
+
+  // ── Audit log de cambios ──────────────────────────────────────────────────
+
+  auditLog: staffProcedure
+    .input(z.object({ expedienteId: z.number(), limit: z.number().default(50) }))
+    .query(async ({ input }) => {
+      return db
+        .select()
+        .from(expedienteAuditLog)
+        .where(eq(expedienteAuditLog.expedienteId, input.expedienteId))
+        .orderBy(desc(expedienteAuditLog.changedAt))
+        .limit(input.limit);
     }),
 
   // ── Rankings y estadísticas globales ──────────────────────────────────────
