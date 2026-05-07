@@ -65,6 +65,7 @@ const CalendarView = lazy(() => import("./pages/admin/operations/CalendarView"))
 const BookingsList = lazy(() => import("./pages/admin/operations/BookingsList"));
 const DailyActivities = lazy(() => import("./pages/admin/operations/DailyActivities"));
 const MonitorsManager = lazy(() => import("./pages/admin/operations/MonitorsManager"));
+const ExpedientesManager = lazy(() => import("./pages/admin/operaciones/ExpedientesManager"));
 
 // Accounting
 const AccountingDashboard = lazy(() => import("./pages/admin/accounting/AccountingDashboard"));
@@ -215,6 +216,7 @@ function Router() {
       <Route path="/admin/operaciones/reservas">{() => <Suspense fallback={<AdminLoadingFallback />}><BookingsList /></Suspense>}</Route>
       <Route path="/admin/operaciones/actividades">{() => <Suspense fallback={<AdminLoadingFallback />}><DailyActivities /></Suspense>}</Route>
       <Route path="/admin/operaciones/monitores">{() => <Suspense fallback={<AdminLoadingFallback />}><MonitorsManager /></Suspense>}</Route>
+      <Route path="/admin/operaciones/expedientes">{() => <Suspense fallback={<AdminLoadingFallback />}><ExpedientesManager /></Suspense>}</Route>
       <Route path="/admin/operaciones/reservas-redsys">{() => { window.location.replace("/admin/crm?tab=reservations"); return null; }}</Route>
 
       {/* Accounting */}

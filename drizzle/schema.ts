@@ -2991,3 +2991,77 @@ export const commercialEmails = mysqlTable("commercial_emails", {
 
 export type CommercialEmail = typeof commercialEmails.$inferSelect;
 export type InsertCommercialEmail = typeof commercialEmails.$inferInsert;
+
+// ─── EXPEDIENTES OPERATIVOS — Cobrafantasmas ──────────────────────────────────
+
+export const expedientes = mysqlTable("expedientes", {
+  id:                      int("id").autoincrement().primaryKey(),
+  numeroExpediente:        varchar("numeroExpediente", { length: 32 }).notNull().unique(),
+  estado: mysqlEnum("estado", [
+    "pendiente_activacion", "estrategia_inicial", "operativo_activo",
+    "negociacion", "acuerdo_parcial", "recuperacion_parcial",
+    "recuperado", "incobrable", "suspendido", "escalada_juridica", "finalizado",
+  ]).default("pendiente_activacion").notNull(),
+  // Acreedor
+  clienteId:               int("clienteId"),
+  clienteNombre:           varchar("clienteNombre", { length: 256 }),
+  // Deudor
+  deudorNombre:            varchar("deudorNombre", { length: 256 }).notNull(),
+  deudorTelefono:          varchar("deudorTelefono", { length: 64 }),
+  deudorEmail:             varchar("deudorEmail", { length: 256 }),
+  deudorDireccion:         text("deudorDireccion"),
+  deudorNif:               varchar("deudorNif", { length: 32 }),
+  // Financiero
+  importeDeuda:            decimal("importeDeuda", { precision: 12, scale: 2 }).notNull().default("0"),
+  importeRecuperado:       decimal("importeRecuperado", { precision: 12, scale: 2 }).default("0"),
+  porcentajeExito:         decimal("porcentajeExito", { precision: 5, scale: 2 }).default("20"),
+  tipoDeuda:               varchar("tipoDeuda", { length: 64 }),
+  // Scoring
+  probabilidadRecuperacion: int("probabilidadRecuperacion").default(50),
+  intensidadOperativa:     int("intensidadOperativa").default(1),
+  // Operativo
+  modoOperacion: mysqlEnum("modoOperacion", ["manual", "semi-automatico", "automatico"]).default("manual"),
+  cazadorId:               int("cazadorId"),
+  // Progreso 0–100
+  progresoOperativo:       int("progresoOperativo").default(0),
+  progresoFinanciero:      int("progresoFinanciero").default(0),
+  progresoPsicologico:     int("progresoPsicologico").default(0),
+  // Fechas
+  fechaApertura:           varchar("fechaApertura", { length: 10 }),
+  fechaCierre:             varchar("fechaCierre", { length: 10 }),
+  // Landing pública
+  landingToken:            varchar("landingToken", { length: 64 }).unique(),
+  // Notas
+  observacionesInternas:   text("observacionesInternas"),
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:               timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Expediente = typeof expedientes.$inferSelect;
+export type InsertExpediente = typeof expedientes.$inferInsert;
+
+export const accionesOperativas = mysqlTable("acciones_operativas", {
+  id:              int("id").autoincrement().primaryKey(),
+  expedienteId:    int("expedienteId").notNull(),
+  tipo: mysqlEnum("tipo", [
+    "llamada", "whatsapp", "email", "visita", "negociacion",
+    "acuerdo", "seguimiento", "investigacion", "requerimiento",
+    "accion_sorpresa", "escalada", "hito", "nota",
+  ]).notNull(),
+  titulo:          varchar("titulo", { length: 256 }).notNull(),
+  descripcion:     text("descripcion"),
+  prioridad:       mysqlEnum("prioridad", ["baja", "media", "alta", "critica"]).default("media"),
+  estado:          mysqlEnum("estado", ["pendiente", "en_progreso", "completada", "cancelada"]).default("pendiente"),
+  fechaProgramada: timestamp("fechaProgramada"),
+  fechaCompletada: timestamp("fechaCompletada"),
+  resultado:       text("resultado"),
+  visibleCliente:  boolean("visibleCliente").default(false).notNull(),
+  cazadorId:       int("cazadorId"),
+  notasInternas:   text("notasInternas"),
+  createdBy:       int("createdBy"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AccionOperativa = typeof accionesOperativas.$inferSelect;
+export type InsertAccionOperativa = typeof accionesOperativas.$inferInsert;

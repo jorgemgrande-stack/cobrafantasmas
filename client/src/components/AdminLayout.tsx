@@ -92,8 +92,9 @@ const navItems = [
     children: [
       { label: "Calendario", href: "/admin/operaciones/calendario" },
       { label: "Actividades del Día", href: "/admin/operaciones/actividades" },
-      { label: "Monitores", href: "/admin/operaciones/monitores" },
+      { label: "Cazadores", href: "/admin/operaciones/monitores" },
       { label: "Reseñas", href: "/admin/operaciones/resenas" },
+      { label: "Expedientes Operativos", href: "/admin/operaciones/expedientes" },
     ],
   },
   {
