@@ -23,7 +23,7 @@ const BCRYPT_ROUNDS = 12;
 
 async function sendResetEmail(to: string, resetUrl: string, name: string) {
   const html = buildPasswordResetHtml({ name: name ?? "", resetUrl, expiryMinutes: TOKEN_EXPIRY_MINUTES });
-  const sent = await sendEmail({ to, subject: `Recuperar contraseña — ${getSystemSettingSync("brand_name", "Nayade Experiences")}`, html });
+  const sent = await sendEmail({ to, subject: `Recuperar contraseña — ${getSystemSettingSync("brand_name", "Cobrafantasmas")}`, html });
   if (!sent) {
     // Fallback: imprimir en consola para desarrollo
     console.log(`\n[PasswordReset] 📧 Enlace de recuperación para ${to}:\n  ${resetUrl}\n`);

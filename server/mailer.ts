@@ -10,7 +10,7 @@
  *
  * Variables de entorno necesarias:
  *   BREVO_API_KEY   — clave API de Brevo (preferido en Railway)
- *   SMTP_FROM       — remitente visible, ej: "Nayade Experiences <reservas@nayadeexperiences.es>"
+ *   SMTP_FROM       — remitente visible, ej: "Cobrafantasmas <reservas@nayadeexperiences.es>"
  *   SMTP_HOST/PORT/USER/PASS/SECURE — fallback SMTP (entornos locales o no-cloud)
  */
 
@@ -32,7 +32,7 @@ function parseSender(raw: string): { name: string; email: string } {
   // Formatos: "Nombre <email>" o solo "email"
   const match = raw.match(/^(.+?)\s*<(.+?)>$/);
   if (match) return { name: match[1].trim(), email: match[2].trim() };
-  return { name: getSystemSettingSync("brand_name", "Nayade Experiences"), email: raw.trim() };
+  return { name: getSystemSettingSync("brand_name", "Cobrafantasmas"), email: raw.trim() };
 }
 
 // ─── Modo 1: Brevo HTTP API ───────────────────────────────────────────────────
@@ -41,7 +41,7 @@ async function sendViaBrevoApi(params: MailParams): Promise<boolean> {
   if (!apiKey) return false;
 
   const noreplyEmail = getSystemSettingSync("email_noreply_sender", "");
-  const brandName = getSystemSettingSync("brand_name", "Nayade Experiences");
+  const brandName = getSystemSettingSync("brand_name", "Cobrafantasmas");
   const fromRaw = params.from
     ?? process.env.SMTP_FROM
     ?? (noreplyEmail ? `${brandName} <${noreplyEmail}>` : `${brandName} <noreply@example.com>`);
@@ -146,7 +146,7 @@ async function sendViaSMTP(params: MailParams): Promise<boolean> {
 // ─── CC global ───────────────────────────────────────────────────────────────
 // Dirección que recibe copia de TODOS los emails salientes.
 // Se puede sobreescribir con la variable de entorno GLOBAL_CC_EMAIL.
-const GLOBAL_CC_EMAIL = process.env.GLOBAL_CC_EMAIL ?? "reservas@nayadeexperiences.es";
+const GLOBAL_CC_EMAIL = process.env.GLOBAL_CC_EMAIL ?? "";
 
 function mergeGlobalCc(params: MailParams): MailParams {
   const existing = params.cc

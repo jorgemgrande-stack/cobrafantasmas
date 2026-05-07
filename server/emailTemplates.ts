@@ -1,17 +1,17 @@
 /**
- * emailTemplates.ts — Plantillas HTML premium de Náyade Experiences.
+ * emailTemplates.ts — Plantillas HTML de Cobrafantasmas.
  *
- * DISEÑO v2.0 — Resort Aventura Premium
- * Estética: agua · naturaleza · emoción · ocio organizado · resort moderno · experiencia premium
+ * DISEÑO v3.0 — Tactical Tech / Cyber-Retro
+ * Estética: oscuro · operativo · preciso · profesional · diferencial
  *
  * Estructura visual homogénea:
- *  1. Cabecera hero: imagen aérea del lago en full-width + overlay azul oscuro + logo centrado
+ *  1. Cabecera hero: fondo oscuro + overlay cyan + logo centrado
  *  2. Tarjeta central flotante: fondo blanco, sombra suave, bordes redondeados
- *  3. Caja de estado: verde suave (confirmación), naranja (advertencia), rojo (error)
+ *  3. Caja de estado: verde suave (confirmación), cyan (acción), rojo (alerta)
  *  4. Bloques de detalles: tabla clara con iconos lineales
- *  5. Botón CTA: naranja degradado energético, ancho, centrado
- *  6. Bloque emocional: texto inspiracional sobre experiencia
- *  7. Footer: fondo beige arena, datos contacto, claim de marca
+ *  5. Botón CTA: cyan degradado, ancho, centrado
+ *  6. Bloque operativo: texto directo y profesional
+ *  7. Footer: fondo oscuro, datos contacto, claim de marca
  *
  * Compatibilidad: Outlook desktop, Gmail, Apple Mail, responsive híbrido
  * Ancho máximo: 600px · Layout: tablas HTML · CSS inline
@@ -26,39 +26,39 @@ const getContactEmail = () => getSystemSettingSync("email_reservations", "contac
 // URLs kept as fallback literals; actual values read from system_settings cache
 // (populated by warmConfigCache() at startup). getSystemSettingSync() returns
 // the fallback on first call and the DB value on all subsequent calls.
-const LOGO_URL_FALLBACK = "https://d2xsxph8kpxj0f.cloudfront.net/310519663410228097/AV298FS8t5SaTurBBRqhgQ/nayade_blue_e9563f49.png";
-const HERO_IMG_FALLBACK = "https://d2xsxph8kpxj0f.cloudfront.net/310519663410228097/AV298FS8t5SaTurBBRqhgQ/nayade_lago_aereo_178815fc.jpg";
-const getBrandLogo  = () => getSystemSettingSync("brand_logo_url",     LOGO_URL_FALLBACK);
+const LOGO_URL_FALLBACK = "";
+const HERO_IMG_FALLBACK = "";
+const getBrandLogo  = () => getSystemSettingSync("brand_logo_url",      LOGO_URL_FALLBACK);
 const getBrandHero  = () => getSystemSettingSync("brand_hero_image_url", HERO_IMG_FALLBACK);
-const getBrandName  = () => getSystemSettingSync("brand_name",         "Nayade Experiences");
-const getBrandShort = () => getSystemSettingSync("brand_short_name",   "Náyade");
-const BRAND_BLUE     = "#0a1628";
-const BRAND_MID_BLUE = "#1e3a6e";
-const BRAND_ORANGE   = "#f97316";
-const BRAND_SAND     = "#f5f0e8";  // beige arena para footer
-const BRAND_SAND_MID = "#ede8dc";
+const getBrandName  = () => getSystemSettingSync("brand_name",          "Cobrafantasmas");
+const getBrandShort = () => getSystemSettingSync("brand_short_name",    "Cobrafantasmas");
+const BRAND_BLUE     = "#0a0c14";   // fondo oscuro principal
+const BRAND_MID_BLUE = "#0d1a2e";   // azul oscuro secundario
+const BRAND_ORANGE   = "#06b6d4";   // cyan — acento Cobrafantasmas
+const BRAND_SAND     = "#f1f5f9";   // gris claro para footer (email-safe)
+const BRAND_SAND_MID = "#e2e8f0";
 
 // ─── SVG icons inline (email-safe) ───────────────────────────────────────────
 const SVG = {
-  calendar: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
-  users:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-  star:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" stroke-width="1" style="display:inline-block;vertical-align:middle;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
-  key:      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg>`,
-  fork:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
-  clock:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-  phone:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.73 16a2 2 0 0 1 .27.92z"/></svg>`,
-  mail:     `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
-  map:      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
-  person:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-  tag:      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
-  chat:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-  lock:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  calendar: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  users:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  star:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="#06b6d4" stroke="#06b6d4" stroke-width="1" style="display:inline-block;vertical-align:middle;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  key:      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg>`,
+  fork:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
+  clock:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  phone:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.73 16a2 2 0 0 1 .27.92z"/></svg>`,
+  mail:     `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
+  map:      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+  person:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  tag:      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
+  chat:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  lock:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
   check:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><polyline points="20 6 9 17 4 12"/></svg>`,
   alert:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
   error:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
-  child:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><circle cx="12" cy="5" r="3"/><path d="M12 8v8"/><path d="M9 14l3 4 3-4"/></svg>`,
-  ref:      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
-  wave:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M2 12c.5-2 2-3 4-3s3.5 1 5 3 2.5 3 5 3 3.5-1 4-3"/><path d="M2 6c.5-2 2-3 4-3s3.5 1 5 3 2.5 3 5 3 3.5-1 4-3"/><path d="M2 18c.5-2 2-3 4-3s3.5 1 5 3 2.5 3 5 3 3.5-1 4-3"/></svg>`,
+  child:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><circle cx="12" cy="5" r="3"/><path d="M12 8v8"/><path d="M9 14l3 4 3-4"/></svg>`,
+  ref:      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+  wave:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><path d="M2 12c.5-2 2-3 4-3s3.5 1 5 3 2.5 3 5 3 3.5-1 4-3"/><path d="M2 6c.5-2 2-3 4-3s3.5 1 5 3 2.5 3 5 3 3.5-1 4-3"/><path d="M2 18c.5-2 2-3 4-3s3.5 1 5 3 2.5 3 5 3 3.5-1 4-3"/></svg>`,
 };
 
 // ─── COMPONENTE 1: Cabecera hero con imagen aérea del lago ────────────────────
@@ -78,15 +78,15 @@ function emailHeader(subtitle?: string, tagline?: string): string {
         <v:textbox inset="0,0,0,0">
         <table width="600" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td align="center" style="padding:36px 40px 28px;background-color:#0d1f3c;">
-              <table cellpadding="0" cellspacing="0" border="0"><tr>
-                <td align="center" style="border:3px solid #ffffff;padding:4px;background-color:#1e3a6e;">
-                  <img src="${getBrandLogo()}" alt="Nayade" width="72" height="72" style="display:block;border:0;" />
+            <td align="center" style="padding:36px 40px 28px;background-color:#0a0c14;">
+              ${getBrandLogo() ? `<table cellpadding="0" cellspacing="0" border="0"><tr>
+                <td align="center" style="border:2px solid #06b6d4;padding:4px;background-color:#0d1a2e;">
+                  <img src="${getBrandLogo()}" alt="Cobrafantasmas" width="72" height="72" style="display:block;border:0;" />
                 </td>
-              </tr></table>
+              </tr></table>` : ""}
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr><td align="center" style="color:#ffffff;font-size:28px;font-weight:900;letter-spacing:5px;font-family:Georgia,serif;padding-top:12px;">N&Aacute;YADE</td></tr>
-                <tr><td align="center" style="color:#c8d8f0;font-size:10px;letter-spacing:6px;text-transform:uppercase;font-family:Arial,sans-serif;padding-top:2px;">EXPERIENCES</td></tr>
+                <tr><td align="center" style="color:#ffffff;font-size:20px;font-weight:900;letter-spacing:4px;font-family:Arial,sans-serif;padding-top:12px;">COBRAFANTASMAS</td></tr>
+                <tr><td align="center" style="color:#06b6d4;font-size:9px;letter-spacing:5px;text-transform:uppercase;font-family:Arial,sans-serif;padding-top:3px;">RECOBRO EXTRAJUDICIAL</td></tr>
               </table>
               ${subtitle ? `<table cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;">
                 <tr><td align="center" style="background-color:${BRAND_ORANGE};color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:6px 20px;font-family:Arial,sans-serif;">${subtitle}</td></tr>
@@ -108,16 +108,16 @@ function emailHeader(subtitle?: string, tagline?: string): string {
       <table width="600" cellpadding="0" cellspacing="0" border="0"
              style="background-color:${BRAND_BLUE};background-image:url('${getBrandHero()}');background-size:cover;background-position:center top;">
         <tr>
-          <td align="center" style="padding:36px 40px 28px;background:linear-gradient(180deg,rgba(10,22,40,0.72) 0%,rgba(10,22,40,0.88) 100%);">
-            <table cellpadding="0" cellspacing="0" border="0"><tr>
-              <td align="center" style="display:inline-block;border-radius:50%;border:3px solid rgba(255,255,255,0.85);padding:4px;background:rgba(255,255,255,0.12);">
-                <img src="${getBrandLogo()}" alt="Náyade" width="72" height="72"
+          <td align="center" style="padding:36px 40px 28px;background:linear-gradient(180deg,rgba(6,182,212,0.08) 0%,rgba(10,12,20,0.96) 100%);">
+            ${getBrandLogo() ? `<table cellpadding="0" cellspacing="0" border="0"><tr>
+              <td align="center" style="display:inline-block;border-radius:50%;border:2px solid #06b6d4;padding:4px;background:rgba(6,182,212,0.12);">
+                <img src="${getBrandLogo()}" alt="Cobrafantasmas" width="72" height="72"
                      style="display:block;border-radius:50%;border:0;" />
               </td>
-            </tr></table>
+            </tr></table>` : ""}
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;">
-              <tr><td align="center" style="color:#ffffff;font-size:30px;font-weight:900;letter-spacing:5px;font-family:Georgia,'Times New Roman',serif;text-shadow:0 2px 12px rgba(0,0,0,0.5);">N&Aacute;YADE</td></tr>
-              <tr><td align="center" style="color:rgba(255,255,255,0.65);font-size:10px;letter-spacing:7px;text-transform:uppercase;margin-top:2px;font-family:Arial,sans-serif;padding-top:2px;">EXPERIENCES</td></tr>
+              <tr><td align="center" style="color:#ffffff;font-size:22px;font-weight:900;letter-spacing:3px;font-family:Arial,sans-serif;text-shadow:0 2px 12px rgba(6,182,212,0.3);">COBRAFANTASMAS</td></tr>
+              <tr><td align="center" style="color:#06b6d4;font-size:9px;letter-spacing:5px;text-transform:uppercase;font-family:Arial,sans-serif;padding-top:3px;">RECOBRO EXTRAJUDICIAL</td></tr>
             </table>
             ${subtitle ? `<table cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;">
               <tr><td align="center" style="background:${BRAND_ORANGE};color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:6px 20px;border-radius:20px;font-family:Arial,sans-serif;">${subtitle}</td></tr>
@@ -174,11 +174,11 @@ function emailFooter(): string {
             <td style="border-top:1px solid ${BRAND_SAND_MID};font-size:0;line-height:0;">&nbsp;</td>
           </tr></table>
           <!-- Claim de marca -->
-          <p style="color:#a08060;font-size:12px;margin:0 0 4px;font-family:Georgia,'Times New Roman',serif;font-style:italic;letter-spacing:0.5px;">
-            N&aacute;yade Experiences &mdash; Vive el verano todo el a&ntilde;o
+          <p style="color:#475569;font-size:12px;margin:0 0 4px;font-family:Arial,sans-serif;font-style:italic;letter-spacing:0.5px;">
+            Cobrafantasmas &mdash; Operamos. Recuperamos. Insistimos.
           </p>
-          <p style="color:#c4a882;font-size:10px;margin:0;font-family:Arial,sans-serif;letter-spacing:1px;">
-            &copy; ${new Date().getFullYear()} N&Aacute;YADE EXPERIENCES &middot; TODOS LOS DERECHOS RESERVADOS
+          <p style="color:#94a3b8;font-size:10px;margin:0;font-family:Arial,sans-serif;letter-spacing:1px;">
+            &copy; ${new Date().getFullYear()} COBRAFANTASMAS &middot; TODOS LOS DERECHOS RESERVADOS
           </p>
         </td>
       </tr></table>

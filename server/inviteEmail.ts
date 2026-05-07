@@ -10,13 +10,13 @@ export async function sendInviteEmail(params: {
 }) {
   const sent = await sendEmail({
     to: params.email,
-    subject: `Bienvenido a ${getSystemSettingSync("brand_name", "Nayade Experiences")} — Activa tu cuenta`,
+    subject: `Bienvenido a ${getSystemSettingSync("brand_name", "Cobrafantasmas")} — Activa tu cuenta`,
     html: buildInviteHtml({
       name: params.name,
       role: params.role,
       setPasswordUrl: params.setPasswordUrl,
     }),
-    text: `Hola ${params.name},\n\nSe ha creado una cuenta para ti en ${getSystemSettingSync("brand_name", "Nayade Experiences")}.\n\nEstablece tu contraseña aquí: ${params.setPasswordUrl}\n\nEste enlace es válido durante 72 horas.\n\n${getSystemSettingSync("brand_name", "Nayade Experiences")}`,
+    text: `Hola ${params.name},\n\nSe ha creado una cuenta para ti en ${getSystemSettingSync("brand_name", "Cobrafantasmas")}.\n\nEstablece tu contraseña aquí: ${params.setPasswordUrl}\n\nEste enlace es válido durante 72 horas.\n\n${getSystemSettingSync("brand_name", "Cobrafantasmas")}`,
   });
   if (sent) {
     console.log(`[InviteEmail] Sent to ${params.email}`);
