@@ -16,7 +16,8 @@
     "seed": "node scripts/import-seed.mjs",
     "seed:export": "node scripts/export-seed.mjs",
     "seed:como-funciona": "node scripts/seed-como-funciona-cms.mjs",
-    "seed:all-pages": "node scripts/seed-all-pages-cms.mjs"
+    "seed:all-pages": "node scripts/seed-all-pages-cms.mjs",
+    "seed:contacto": "node scripts/seed-contacto-cms.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
