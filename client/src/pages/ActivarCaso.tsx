@@ -63,6 +63,11 @@ export default function ActivarCaso() {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
+  const { data: pageBlocks = [] } = trpc.public.getPublicPageBlocks.useQuery({ slug: "activar-caso" });
+  const heroBlock = (pageBlocks as any[]).find((b: any) => b.blockType === "hero");
+  const heroImageUrl: string = heroBlock ? String(heroBlock.data?.imageUrl ?? "") : "";
+  const overlayOpacity: number = heroBlock ? Number(heroBlock.data?.overlayOpacity ?? 75) / 100 : 0.75;
+
   const submitLead = trpc.public.submitLead.useMutation({
     onSuccess: () => {
       setSubmitted(true);
@@ -136,9 +141,20 @@ export default function ActivarCaso() {
           backgroundColor: BG,
           borderBottom: `2px solid ${DANGER}`,
           padding: "3.5rem 0 2.5rem",
+          position: "relative",
+          overflow: "hidden",
+          ...(heroImageUrl ? {
+            backgroundImage: `url('${heroImageUrl}')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center 20%",
+            backgroundRepeat: "no-repeat",
+          } : {}),
         }}
       >
-        <div className="container">
+        {heroImageUrl && (
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundColor: `rgba(10,10,10,${overlayOpacity})` }} />
+        )}
+        <div className="container" style={{ position: "relative" }}>
           <div className="flex items-center gap-2 text-sm mb-5" style={{ color: "rgba(255,255,255,0.35)" }}>
             <Link
               href="/"

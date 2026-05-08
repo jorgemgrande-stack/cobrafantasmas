@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import PublicLayout from "@/components/PublicLayout";
+import { trpc } from "@/lib/trpc";
 
 const NEON = "#7ED957";
 const DANGER = "#E41E26";
@@ -57,6 +58,11 @@ const casos = [
 ];
 
 export default function Casos() {
+  const { data: pageBlocks = [] } = trpc.public.getPublicPageBlocks.useQuery({ slug: "casos" });
+  const heroBlock = (pageBlocks as any[]).find((b: any) => b.blockType === "hero");
+  const heroImageUrl: string = heroBlock ? String(heroBlock.data?.imageUrl ?? "") : "";
+  const overlayOpacity: number = heroBlock ? Number(heroBlock.data?.overlayOpacity ?? 75) / 100 : 0.75;
+
   return (
     <PublicLayout fullWidthHero>
       {/* ── Hero interior ─────────────────────────────────────────────── */}
@@ -65,9 +71,20 @@ export default function Casos() {
           backgroundColor: BG,
           borderBottom: `2px solid ${NEON}`,
           padding: "4rem 0 3rem",
+          position: "relative",
+          overflow: "hidden",
+          ...(heroImageUrl ? {
+            backgroundImage: `url('${heroImageUrl}')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center 20%",
+            backgroundRepeat: "no-repeat",
+          } : {}),
         }}
       >
-        <div className="container">
+        {heroImageUrl && (
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundColor: `rgba(10,10,10,${overlayOpacity})` }} />
+        )}
+        <div className="container" style={{ position: "relative" }}>
           <div className="flex items-center gap-2 text-sm mb-6" style={{ color: "rgba(255,255,255,0.35)" }}>
             <Link
               href="/"
