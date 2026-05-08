@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import PublicLayout from "@/components/PublicLayout";
+import { trpc } from "@/lib/trpc";
 
 const NEON   = "#7ED957";
 const DANGER = "#E41E26";
@@ -149,6 +150,11 @@ export default function ComoFunciona() {
     return () => clearInterval(t);
   }, []);
 
+  const { data: pageBlocks = [] } = trpc.public.getPublicPageBlocks.useQuery({ slug: "como-funciona" });
+  const heroBlock = (pageBlocks as any[]).find((b: any) => b.blockType === "hero");
+  const heroImageUrl: string = heroBlock ? String(heroBlock.data?.imageUrl ?? "") : "";
+  const overlayOpacity: number = heroBlock ? Number(heroBlock.data?.overlayOpacity ?? 75) / 100 : 0.75;
+
   return (
     <PublicLayout fullWidthHero>
 
@@ -169,7 +175,26 @@ export default function ComoFunciona() {
       `}</style>
 
       {/* ─── HERO ─────────────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: BG, borderBottom: `1px solid rgba(126,217,87,0.2)`, padding: "5rem 0 4rem", position: "relative", overflow: "hidden" }}>
+      <section style={{
+        backgroundColor: BG,
+        borderBottom: `1px solid rgba(126,217,87,0.2)`,
+        padding: "5rem 0 4rem",
+        position: "relative",
+        overflow: "hidden",
+        ...(heroImageUrl ? {
+          backgroundImage: `url('${heroImageUrl}')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center 20%",
+          backgroundRepeat: "no-repeat",
+        } : {}),
+      }}>
+        {/* Overlay oscuro sobre la imagen */}
+        {heroImageUrl && (
+          <div style={{
+            position: "absolute", inset: 0, pointerEvents: "none",
+            backgroundColor: `rgba(10,10,10,${overlayOpacity})`,
+          }} />
+        )}
         {/* Grid de fondo */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",

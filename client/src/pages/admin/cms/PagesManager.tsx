@@ -355,7 +355,7 @@ export default function PagesManager() {
           </div>
 
           {/* Canvas */}
-          <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+          <div className="flex-1 overflow-y-auto p-6 bg-muted/30">
             <div className="max-w-3xl mx-auto space-y-3">
               {blocks.length === 0 ? (
                 <div className="text-center py-16 border-2 border-dashed border-border rounded-xl bg-background">
@@ -365,10 +365,10 @@ export default function PagesManager() {
                 </div>
               ) : (
                 blocks.map((block, idx) => (
-                  <div key={block.id} className={`bg-background border rounded-xl overflow-hidden shadow-sm ${!block.isVisible ? "opacity-50" : ""}`}>
+                  <div key={block.id} className={`bg-card border border-border rounded-xl overflow-hidden shadow-sm ${!block.isVisible ? "opacity-50" : ""}`}>
                     {/* Block header */}
                     <div
-                      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 select-none"
+                      className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/40 select-none transition-colors"
                       onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)}
                     >
                       <GripVertical size={14} className="text-muted-foreground" />
@@ -386,7 +386,7 @@ export default function PagesManager() {
                     </div>
                     {/* Block editor */}
                     {expandedBlock === block.id && (
-                      <div className="px-4 pb-4 pt-1 border-t border-border bg-slate-50/50">
+                      <div className="px-4 pb-4 pt-1 border-t border-border bg-muted/20">
                         <BlockEditor block={block} onChange={(data) => updateBlock(block.id, data)} />
                       </div>
                     )}
@@ -404,12 +404,12 @@ export default function PagesManager() {
                   <Plus size={16} className="mr-2" />Añadir bloque
                 </Button>
                 {showBlockPicker && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-xl shadow-lg p-3 z-20 grid grid-cols-2 gap-2">
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg p-3 z-20 grid grid-cols-2 gap-2">
                     {BLOCK_CATALOG.map(b => (
                       <button
                         key={b.type}
                         onClick={() => addBlock(b.type)}
-                        className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 text-left border border-transparent hover:border-border transition-colors"
+                        className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 text-left border border-transparent hover:border-border transition-colors"
                       >
                         <span className="text-primary mt-0.5">{b.icon}</span>
                         <div>
@@ -442,10 +442,10 @@ export default function PagesManager() {
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">Cargando páginas...</div>
         ) : (
-          <div className="bg-background border border-border rounded-xl overflow-hidden">
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-slate-50">
+                <tr className="border-b border-border bg-muted/40">
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Página</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">URL</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Estado</th>
@@ -455,7 +455,7 @@ export default function PagesManager() {
               </thead>
               <tbody>
                 {(pages || []).map((page: any) => (
-                  <tr key={page.id} className="border-b border-border last:border-0 hover:bg-slate-50/50">
+                  <tr key={page.id} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <FileText size={14} className="text-muted-foreground" />
@@ -463,7 +463,7 @@ export default function PagesManager() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <code className="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">/{page.slug}</code>
+                      <code className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">/{page.slug}</code>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
