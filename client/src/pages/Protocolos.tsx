@@ -108,7 +108,7 @@ export default function Protocolos() {
       </section>
 
       {/* ── Protocol cards ────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: BG, padding: "5rem 0" }}>
+      <section style={{ backgroundColor: BG, padding: "clamp(3rem, 7vw, 5rem) 0" }}>
         <div className="container">
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", maxWidth: "900px" }}>
             {protocols.map((p, i) => (
@@ -185,7 +185,7 @@ export default function Protocolos() {
       </section>
 
       {/* ── Nota legal ────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: "#111", padding: "3rem 0" }}>
+      <section style={{ backgroundColor: "#111", padding: "clamp(2rem, 5vw, 3rem) 0" }}>
         <div className="container">
           <div
             style={{
@@ -213,7 +213,7 @@ export default function Protocolos() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: BG, padding: "5rem 0", textAlign: "center" }}>
+      <section style={{ backgroundColor: BG, padding: "clamp(3rem, 7vw, 5rem) 0", textAlign: "center" }}>
         <div className="container">
           <h2
             className="font-display"

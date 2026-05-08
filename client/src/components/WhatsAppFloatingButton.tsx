@@ -1,5 +1,5 @@
 const WA_URL =
-  "https://wa.me/34911675189?text=Hola%20Nayade%20Experiences%2C%20me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n";
+  "https://wa.me/34911675189?text=Hola%20Cobrafantasmas%2C%20quiero%20informaci%C3%B3n%20sobre%20recuperar%20una%20deuda";
 
 export default function WhatsAppFloatingButton() {
   return (

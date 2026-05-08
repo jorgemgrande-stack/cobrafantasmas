@@ -186,7 +186,7 @@ export default function ActivarCaso() {
       </section>
 
       {/* ── Formulario ────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: BG, padding: "4rem 0 5rem" }}>
+      <section style={{ backgroundColor: BG, padding: "clamp(2.5rem, 6vw, 4rem) 0 clamp(3rem, 7vw, 5rem)" }}>
         <div className="container">
           <div style={{ maxWidth: "672px", margin: "0 auto" }}>
             {submitted ? (
@@ -260,7 +260,7 @@ export default function ActivarCaso() {
                   backgroundColor: "#111",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: "1rem",
-                  padding: "2.5rem",
+                  padding: "clamp(1.25rem, 4vw, 2.5rem)",
                   boxShadow: "0 25px 60px rgba(0,0,0,0.4)",
                 }}
               >

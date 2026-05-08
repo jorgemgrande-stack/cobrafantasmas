@@ -150,7 +150,7 @@ export default function PreguntasFrecuentes() {
       </section>
 
       {/* ── Acordeón por secciones ────────────────────────────────────── */}
-      <section style={{ backgroundColor: BG, padding: "5rem 0" }}>
+      <section style={{ backgroundColor: BG, padding: "clamp(3rem, 7vw, 5rem) 0" }}>
         <div className="container" style={{ maxWidth: "820px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "3.5rem" }}>
             {faqSections.map((section) => (
@@ -248,7 +248,7 @@ export default function PreguntasFrecuentes() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: "#111", padding: "5rem 0", textAlign: "center" }}>
+      <section style={{ backgroundColor: "#111", padding: "clamp(3rem, 7vw, 5rem) 0", textAlign: "center" }}>
         <div className="container">
           <h2
             className="font-display"

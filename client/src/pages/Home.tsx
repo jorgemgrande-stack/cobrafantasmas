@@ -179,6 +179,8 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideVisible, setSlideVisible] = useState(true);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
 
   // Formulario
   const [form, setForm] = useState<LeadForm>(EMPTY_FORM);
@@ -279,6 +281,19 @@ export default function Home() {
     changeSlide((prev) => (prev + 1) % slides.length);
   };
 
+  const handleHeroTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleHeroTouchEnd = (e: React.TouchEvent) => {
+    touchEndX.current = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextSlide();
+      else prevSlide();
+    }
+  };
+
   // Upload doc inline (primer documento)
   const handleDoc0Upload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -356,8 +371,10 @@ export default function Home() {
           MÓDULO 1 — HERO
       ══════════════════════════════════════════════════════════════════════════ */}
       <section
-        className="relative h-screen flex items-center overflow-hidden"
+        className="relative min-h-screen flex items-start lg:items-center overflow-x-hidden"
         style={{ backgroundColor: "#0A0A0A" }}
+        onTouchStart={handleHeroTouchStart}
+        onTouchEnd={handleHeroTouchEnd}
       >
         {/* Imagen/GIF de fondo del slide (CMS) — img tag para que los GIFs animen */}
         {slide?.imageUrl && (
@@ -389,7 +406,7 @@ export default function Home() {
           }}
         />
 
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-6 lg:pt-24 lg:pb-8">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8 sm:pt-10 lg:pt-24 lg:pb-8">
           <div className="flex flex-col lg:flex-row items-start gap-8 lg:gap-12">
             {/* Columna izquierda — Texto y claims */}
             <div className="w-full lg:w-3/5 flex flex-col gap-4">

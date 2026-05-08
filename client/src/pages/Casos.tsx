@@ -116,7 +116,7 @@ export default function Casos() {
       </section>
 
       {/* ── Cards de casos ────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: BG, padding: "5rem 0" }}>
+      <section style={{ backgroundColor: BG, padding: "clamp(3rem, 7vw, 5rem) 0" }}>
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {casos.map((caso, i) => (
@@ -228,7 +228,7 @@ export default function Casos() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: "#111", padding: "5rem 0", textAlign: "center" }}>
+      <section style={{ backgroundColor: "#111", padding: "clamp(3rem, 7vw, 5rem) 0", textAlign: "center" }}>
         <div className="container">
           <h2
             className="font-display"

@@ -307,3 +307,34 @@ select {
 .card-dark { background: #141414; border: 1px solid #222; }
 .card-dark:hover { border-color: #7ED957; box-shadow: 0 0 15px rgba(126,217,87,0.15); }
 .hud-label { font-family: 'Inter', monospace; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #7ED957; }
+
+@keyframes wa-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); }
+  50%       { box-shadow: 0 0 0 10px rgba(37,211,102,0); }
+}
+.animate-wa-pulse { animation: wa-pulse 2.5s ease-in-out infinite; }
+
+/* ── Mobile touch improvements ─────────────────────────────────────────────── */
+a, button, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Prevent iOS auto-zoom on input focus (requires font-size >= 16px) */
+@media (max-width: 1023px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+/* Smooth momentum scrolling on iOS */
+html {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent pull-to-refresh on hero sections */
+.no-pull-refresh {
+  overscroll-behavior-y: none;
+}

@@ -92,7 +92,7 @@ export default function ElSistema() {
       </section>
 
       {/* ── Panel del cliente: descripción ───────────────────────────── */}
-      <section style={{ backgroundColor: BG, padding: "5rem 0" }}>
+      <section style={{ backgroundColor: BG, padding: "clamp(3rem, 7vw, 5rem) 0" }}>
         <div className="container">
           <div
             style={{
@@ -127,7 +127,7 @@ export default function ElSistema() {
       </section>
 
       {/* ── 6 características ─────────────────────────────────────────── */}
-      <section style={{ backgroundColor: "#111", padding: "5rem 0" }}>
+      <section style={{ backgroundColor: "#111", padding: "clamp(3rem, 7vw, 5rem) 0" }}>
         <div className="container">
           <h2
             className="font-display"
@@ -177,7 +177,7 @@ export default function ElSistema() {
       </section>
 
       {/* ── Para el equipo gestor ─────────────────────────────────────── */}
-      <section style={{ backgroundColor: BG, padding: "5rem 0" }}>
+      <section style={{ backgroundColor: BG, padding: "clamp(3rem, 7vw, 5rem) 0" }}>
         <div className="container">
           <div
             style={{
@@ -208,7 +208,7 @@ export default function ElSistema() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: "#111", padding: "5rem 0", textAlign: "center" }}>
+      <section style={{ backgroundColor: "#111", padding: "clamp(3rem, 7vw, 5rem) 0", textAlign: "center" }}>
         <div className="container">
           <h2
             className="font-display"
